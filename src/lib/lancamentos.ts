@@ -61,6 +61,8 @@ export function detalhe(l: Pick<Lancamento, 'data_inicio' | 'data_retorno' | 'qt
 export type Decisao = 'Aguardando' | 'Autorizado' | 'Devolvido' | 'Não autorizado' | 'Dispensado';
 
 type Um1Doc = { id: string; situacao: 'Pendente' | 'Enviado' };
+/** Um movimento da avaliação (gravado pelo banco) */
+export type EventoTrilha = { em: string; evento: string; por?: string; obs?: string };
 type ItemAviso = { aviso: { id: string; numero: string } | null };
 
 /** Primeiro item de uma relação, venha como lista ou objeto */
@@ -77,7 +79,10 @@ export type Lancamento = {
   motivo_ocorrencia: string | null; testemunha: string | null;
   horario_entrada: string | null; horario_saida_almoco: string | null; horario_retorno_almoco: string | null; horario_saida: string | null;
   situacao_rh: string; destino_rh: string | null; enviado_rh_em: string | null; baixa_em: string | null;
-  avaliacao_etapa: 'Na DAE' | 'Na unidade' | 'Devolvida' | null; avaliacao_unidade_em: string | null; avaliacao_devolvida_em: string | null;
+  avaliacao_etapa: 'Na DAE' | 'Na unidade' | null; avaliacao_unidade_em: string | null; avaliacao_devolvida_em: string | null;
+  /** 1ª, 2ª... avaliação do mesmo papel; de onde chegou; a anterior; o caminho percorrido */
+  avaliacao_rodada: number; avaliacao_chegou_de: 'RH' | 'Unidade' | null; avaliacao_anterior: string | null;
+  avaliacao_trilha: EventoTrilha[];
   // O Supabase pode devolver lista ou objeto (relação 1 para 1); use primeiro()
   comunicados_1doc?: Um1Doc | Um1Doc[] | null;
   aviso_rh_itens?: ItemAviso | ItemAviso[] | null;
@@ -88,7 +93,7 @@ export const CAMPOS_LANCAMENTO =
   'data_recebimento, data_inicio, data_retorno, qtd_dias, venda_terco, referencia, quantidade, obs, ' +
   'motivo_ocorrencia, testemunha, horario_entrada, horario_saida_almoco, horario_retorno_almoco, horario_saida, ' +
   'diretora, diretora_obs, diretora_em, diretor_id, diretor_nome, data_assinatura, situacao_rh, destino_rh, enviado_rh_em, baixa_em, ' +
-  'avaliacao_etapa, avaliacao_unidade_em, avaliacao_devolvida_em';
+  'avaliacao_etapa, avaliacao_unidade_em, avaliacao_devolvida_em, avaliacao_rodada, avaliacao_chegou_de, avaliacao_anterior, avaliacao_trilha';
 
 /** Para a tabela: inclui 1Doc e Aviso RH */
 export const CAMPOS_TABELA =
@@ -112,7 +117,7 @@ export type Passo = { titulo: string; data: string | null };
 /**
  * Linha do tempo do pedido.
  * - Pedidos: Na DAE → Assinado → Enviado ao RH (termina aqui)
- * - Avaliações: Recebida do RH → Na unidade → Devolvida pela unidade → Assinada (ou liberada, na promoção) → Enviada ao RH
+ * - Avaliações: Recebida → Na unidade → Assinada (ou liberada, na promoção) → Enviada ao RH; unidade e assinatura podem vir em qualquer ordem
  * `atual` = última etapa cumprida. `parado` = devolvido/não autorizado pela Diretoria (trava a etapa seguinte).
  */
 export function linhaDoTempo(l: Lancamento): { passos: Passo[]; atual: number; parado: string | null; fim: boolean } {
@@ -123,16 +128,15 @@ export function linhaDoTempo(l: Lancamento): { passos: Passo[]; atual: number; p
   let atual: number;
 
   if (l.categoria === 'avaliacoes') {
+    // o caminho varia (unidade antes ou depois da assinatura); a barra mostra o principal
+    const assinada = l.diretora === 'Autorizado' || l.diretora === 'Dispensado';
     passos = [
-      { titulo: 'Recebida do RH', data: l.data_recebimento },
+      { titulo: l.avaliacao_chegou_de === 'Unidade' ? 'Recebida da unidade' : 'Recebida do RH', data: l.data_recebimento },
       { titulo: 'Na unidade', data: l.avaliacao_unidade_em },
-      { titulo: 'Devolvida pela unidade', data: l.avaliacao_devolvida_em },
-      { titulo: l.tipo === TIPO_PROMOCAO ? 'Liberada (sem assinatura)' : 'Assinada', data: assinatura },
+      { titulo: l.diretora === 'Dispensado' ? 'Liberada (sem assinatura)' : 'Assinada', data: assinatura },
       { titulo: rh, data: l.enviado_rh_em },
     ];
-    atual = ENVIADO.includes(l.situacao_rh) ? 4
-      : l.situacao_rh === 'Autorizado / Aguardando envio' ? 3
-      : l.avaliacao_etapa === 'Devolvida' ? 2 : l.avaliacao_etapa === 'Na unidade' ? 1 : 0;
+    atual = ENVIADO.includes(l.situacao_rh) ? 3 : assinada ? 2 : l.avaliacao_etapa === 'Na unidade' || l.avaliacao_devolvida_em ? 1 : 0;
   } else {
     passos = [
       { titulo: 'Na DAE', data: l.data_recebimento },
@@ -174,9 +178,10 @@ export function resumoHorarios(l: Pick<Lancamento, 'horario_entrada' | 'horario_
 /** Texto curto do andamento: "Aguardando assinatura", "Enviado ao RH SESAU"… */
 export function textoAndamento(l: Pick<Lancamento, 'situacao_rh' | 'destino_rh'> & Partial<Pick<Lancamento, 'categoria' | 'avaliacao_etapa'>>) {
   if (l.categoria === 'avaliacoes' && l.situacao_rh === 'Aguardando autorização') {
-    if (l.avaliacao_etapa === 'Na DAE') return 'Recebida do RH, a enviar à unidade';
     if (l.avaliacao_etapa === 'Na unidade') return 'Com a unidade';
+    return 'Na DAE';
   }
+  if (l.categoria === 'avaliacoes' && l.situacao_rh === 'Autorizado / Aguardando envio' && l.avaliacao_etapa === 'Na unidade') return 'Assinada, com a unidade';
   switch (l.situacao_rh) {
     case 'Aguardando autorização': return 'Aguardando assinatura';
     case 'Autorizado / Aguardando envio': return 'Pronto, aguardando envio ao RH';
@@ -188,3 +193,6 @@ export function textoAndamento(l: Pick<Lancamento, 'situacao_rh' | 'destino_rh'>
 
 /** Como mostrar a decisão da Diretoria */
 export const textoDecisao = (d: string) => (d === 'Dispensado' ? 'Sem assinatura' : d);
+
+/** "2ª avaliação" (vazio na 1ª) */
+export const textoRodada = (l: Pick<Lancamento, 'avaliacao_rodada'>) => (l.avaliacao_rodada > 1 ? `${l.avaliacao_rodada}ª avaliação` : '');

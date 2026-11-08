@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Building2, Check, CornerDownLeft, FileSignature, Inbox, Search, Send, Undo2, X } from 'lucide-react';
+import { Building2, Check, FileSignature, Inbox, Search, Send, Undo2, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { dataBR, mensagemErro, normalizar } from '@/lib/formato';
 import {
@@ -22,11 +22,10 @@ const PASSOS_PEDIDO = [
   { titulo: 'Enviado ao RH', texto: 'A DAE encaminhou ao RH (SESAU ou FSPSS). O pedido termina aqui.', icone: Send },
 ];
 const PASSOS_AVALIACAO = [
-  { titulo: 'Recebida do RH', texto: 'A avaliação chegou à DAE.', icone: Inbox },
-  { titulo: 'Na unidade', texto: 'A DAE enviou para a unidade preencher.', icone: Building2 },
-  { titulo: 'Devolvida', texto: 'A chefia preencheu e devolveu à DAE.', icone: CornerDownLeft },
-  { titulo: 'Assinada', texto: 'A Diretoria assinou (a de promoção não precisa).', icone: FileSignature },
-  { titulo: 'Enviada ao RH', texto: 'A DAE encaminhou ao RH.', icone: Send },
+  { titulo: 'Recebida', texto: 'A avaliação chegou à DAE (do RH ou da unidade).', icone: Inbox },
+  { titulo: 'Na unidade', texto: 'A chefia preenche e devolve (ou envia ao RH, se já assinada).', icone: Building2 },
+  { titulo: 'Assinada', texto: 'A Diretoria assinou, antes ou depois da unidade (a de promoção não precisa).', icone: FileSignature },
+  { titulo: 'Enviada ao RH', texto: 'Foi ao RH. Se voltar para a próxima avaliação, começa de novo.', icone: Send },
 ];
 
 /** Frase simples sobre a situação do pedido */
@@ -34,12 +33,16 @@ function frase(l: Lancamento) {
   const quem = l.diretor_nome ? ` por ${l.diretor_nome}` : '';
   const quando = l.data_assinatura ? ` em ${dataBR(l.data_assinatura)}` : '';
   const rh = l.destino_rh ?? 'RH';
+  const rodada = l.avaliacao_rodada > 1 ? `${l.avaliacao_rodada}ª avaliação. ` : '';
+  if (l.categoria === 'avaliacoes' && l.avaliacao_etapa === 'Na unidade' && !['Enviado ao RH', 'Concluído'].includes(l.situacao_rh)) {
+    return `${rodada}Está com a unidade desde ${dataBR(l.avaliacao_unidade_em)}. ` + (l.diretora === 'Autorizado' || l.diretora === 'Dispensado'
+      ? `Já assinada${quem}: a chefia preenche e pode enviar direto ao ${rh}.`
+      : 'A chefia deve preencher e devolver à DAE.');
+  }
   if (l.categoria === 'avaliacoes' && l.diretora === 'Aguardando') {
-    if (l.avaliacao_etapa === 'Na DAE') return `A DAE recebeu esta avaliação do RH em ${dataBR(l.data_recebimento)} e vai enviá-la para a unidade.`;
-    if (l.avaliacao_etapa === 'Na unidade') {
-      return `A avaliação está com a unidade desde ${dataBR(l.avaliacao_unidade_em)}. A chefia deve preencher, assinar e devolver à DAE.`;
-    }
-    return `A unidade devolveu em ${dataBR(l.avaliacao_devolvida_em)}. Aguardando a assinatura da Diretoria.`;
+    return l.avaliacao_devolvida_em
+      ? `${rodada}A unidade devolveu em ${dataBR(l.avaliacao_devolvida_em)}. Aguardando a assinatura da Diretoria.`
+      : `${rodada}Na DAE desde ${dataBR(l.data_recebimento)}. A DAE vai encaminhar para a unidade ou para a assinatura.`;
   }
   switch (l.situacao_rh) {
     case 'Aguardando autorização': return `Recebido na DAE em ${dataBR(l.data_recebimento)}. Aguardando a assinatura da Diretoria.`;

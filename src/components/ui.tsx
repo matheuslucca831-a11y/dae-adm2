@@ -69,6 +69,11 @@ const SELOS: Record<string, string> = {
   'Enviado ao RH': 'bg-[#e6f4ea] text-[#046645] ring-[#046645]/20',
   'Concluído': 'bg-[#046645] text-white ring-[#046645]',
   'Sem assinatura': 'bg-faint-gray text-slate-gray ring-linha',
+  // Pedidos e avaliações (situação resumida)
+  'Aguardando assinatura': 'bg-[#fef3c7] text-[#b7791f] ring-[#b7791f]/20',
+  'Pronto para o RH': 'bg-[#edf3fc] text-[#004aad] ring-[#004aad]/20',
+  'Na DAE': 'bg-[#fef3c7] text-[#b7791f] ring-[#b7791f]/20',
+  'Na unidade': 'bg-faint-gray text-slate-gray ring-linha',
   // Sugestões de cadastro
   'Aguardando a DAE': 'bg-[#fef3c7] text-[#b7791f] ring-[#b7791f]/20',
   Aceita: 'bg-[#e6f4ea] text-[#046645] ring-[#046645]/20',

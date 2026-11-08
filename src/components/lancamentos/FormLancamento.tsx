@@ -57,6 +57,8 @@ export default function FormLancamento({
     horario_retorno_almoco: l?.horario_retorno_almoco?.slice(0, 5) ?? '',
     horario_saida: l?.horario_saida?.slice(0, 5) ?? '',
     // Cartão de ponto: 'AAAA-MM' (vem de 'MM/AAAA')
+    // Avaliação: de onde o papel chegou (só ao registrar)
+    chegou_de: (l?.avaliacao_chegou_de ?? 'RH') as 'RH' | 'Unidade',
     mes_ref: l?.referencia && /^\d{2}\/\d{4}$/.test(l.referencia) ? `${l.referencia.slice(3)}-${l.referencia.slice(0, 2)}` : hojeISO().slice(0, 7),
   });
   const [esquecimentos, setEsquecimentos] = useState<{ chave: string; n: number } | null>(null);
@@ -176,6 +178,7 @@ export default function FormLancamento({
       ...(modo === 'ocorrencia' ? { data_retorno: null, referencia: null } : {}),
       ...(modo === 'cartao' ? { referencia: `${f.mes_ref.slice(5, 7)}/${f.mes_ref.slice(0, 4)}`, data_inicio: null, qtd_dias: null, data_retorno: null } : {}),
       ...(central ? { unidade_id: f.unidade_id || null } : {}),
+      ...(cat === 'avaliacoes' && !l ? { avaliacao_chegou_de: f.chegou_de } : {}),
       // Pedido devolvido e corrigido volta para a Diretoria
       ...(central && l?.diretora === 'Devolvido' ? { diretora: 'Aguardando' } : {}),
     };
@@ -278,6 +281,21 @@ export default function FormLancamento({
           <Campo rotulo="Recebido em">
             <input type="date" value={f.data_recebimento} onChange={(e) => set('data_recebimento', e.target.value)} className={inputCls} />
           </Campo>
+
+          {cat === 'avaliacoes' && !l && (
+            <fieldset className="sm:col-span-2">
+              <legend className="mb-1 text-xs font-semibold text-tinta-suave">Chegou de</legend>
+              <div className="flex gap-2">
+                {(['RH', 'Unidade'] as const).map((o) => (
+                  <label key={o} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${f.chegou_de === o ? 'border-acento bg-acento-claro font-semibold' : 'border-linha hover:bg-papel'}`}>
+                    <input type="radio" name="chegou_de" checked={f.chegou_de === o} onChange={() => setF((x) => ({ ...x, chegou_de: o }))} className="size-4 accent-[var(--acento)]" />
+                    {o === 'RH' ? 'Do RH' : 'Da unidade'}
+                  </label>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-tinta-suave">Depois, use "Encaminhar" para mandar à unidade, à assinatura ou ao RH, na ordem que precisar.</p>
+            </fieldset>
+          )}
 
           {modo === 'ocorrencia' && (
             <>
