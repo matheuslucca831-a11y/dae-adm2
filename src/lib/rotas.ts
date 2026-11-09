@@ -21,7 +21,7 @@ export const ROTAS: Rota[] = [
   { path: '/pedidos',         titulo: 'Pedidos',                descricao: 'Férias / LP, Folgas / Abonos e HE / BH.', icone: Inbox, somenteCentral: true },
   { path: '/ponto-ausencias', titulo: 'Ponto / Ausências',      descricao: 'Ocorrências de ponto, atestados e declarações.', icone: Fingerprint, somenteCentral: true },
   { path: '/avaliacoes',      titulo: 'Avaliações',             descricao: 'Avaliações de desempenho.', icone: ClipboardCheck, somenteCentral: true },
-  { path: '/envios-rh',       titulo: 'Envios RH',              descricao: 'Selecione lançamentos autorizados e gere o documento de envio ao RH.', icone: Send, somenteCentral: true },
+  { path: '/envios-rh',       titulo: 'Envios RH',              descricao: 'Tudo o que está pronto para o RH (pedidos, ponto e avaliações) num Aviso só.', icone: Send, somenteCentral: true },
   { path: '/avisos-rh',       titulo: 'Avisos RH',              descricao: 'Acompanhe os avisos emitidos e confirme os envios.', icone: FileText, somenteCentral: true },
   { path: '/relatorios',      titulo: 'Relatórios',             descricao: 'Relatórios de funcionários e administrativos para impressão.', icone: Printer, somenteCentral: true },
   { path: '/administracao',   titulo: 'Administração',          descricao: 'Usuários, unidades, vínculos e diretores.', icone: Settings, somenteCentral: true },

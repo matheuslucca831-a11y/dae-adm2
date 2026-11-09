@@ -52,9 +52,13 @@ type Destino = 'unidade' | 'dae' | 'assinatura' | 'sem' | 'rh' | 'proxima';
 /** Painel aberto embaixo de uma linha */
 type Painel =
   | { id: string; tipo: 'assinar'; decisao: Decisao; obs: string; diretor_id: string; data: string }
-  | { id: string; tipo: 'encaminhar'; destino: Destino | null; diretor_id: string; data: string }
-  | { id: string; tipo: 'rh' }
+  | { id: string; tipo: 'encaminhar'; destino: Destino | null; diretor_id: string; data: string; anotacao: string }
+  | { id: string; tipo: 'rh'; anotacao?: string }
   | { id: string; tipo: 'caminho' };
+
+/** Anotação que vai para o caminho da avaliação (só manda o campo quando há texto) */
+const comAnotacao = (patch: Record<string, unknown>, anotacao?: string) =>
+  anotacao?.trim() ? { ...patch, movimento_obs: anotacao.trim() } : patch;
 
 export default function TelaLancamentos({ categorias, inicial, titulo, descricao, perfil }: {
   categorias: Categoria[]; inicial?: FiltroCategoria; titulo: string; descricao: string; perfil: Perfil;
@@ -209,11 +213,11 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
 
   const diretorPadrao = () => ultimoDiretor || (diretores.length === 1 ? diretores[0].id : '');
 
-  function assinar(l: Lancamento, decisao: Decisao, diretor_id: string, data: string, obs = '') {
+  function assinar(l: Lancamento, decisao: Decisao, diretor_id: string, data: string, obs = '', anotacao = '') {
     if (!diretor_id) return setErro('Escolha qual diretor(a) assinou.');
     if (decisao !== 'Autorizado' && !obs.trim()) return setErro('Escreva a justificativa; quem acompanha vai ver.');
     setUltimoDiretor(diretor_id);
-    atualizar(l, { diretora: decisao, diretora_obs: obs.trim() || null, diretor_id, data_assinatura: data || null },
+    atualizar(l, comAnotacao({ diretora: decisao, diretora_obs: obs.trim() || null, diretor_id, data_assinatura: data || null }, anotacao),
       decisao === 'Autorizado' ? `${l.protocolo_dae}: assinatura registrada.` : `${l.protocolo_dae}: ${textoDecisao(decisao).toLowerCase()}.`);
   }
 
@@ -248,17 +252,18 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
 
   /** Executa o destino escolhido no "Encaminhar" */
   function encaminhar(l: Lancamento, p: Extract<Painel, { tipo: 'encaminhar' }>) {
+    const a = p.anotacao;
     switch (p.destino) {
-      case 'unidade': return atualizar(l, { avaliacao_etapa: 'Na unidade' }, `${l.funcionario_nome}: avaliação enviada à unidade.`);
-      case 'dae': return atualizar(l, { avaliacao_etapa: 'Na DAE' }, `${l.funcionario_nome}: avaliação de volta na DAE.`);
-      case 'assinatura': return assinar(l, 'Autorizado', p.diretor_id, p.data);
-      case 'sem': return atualizar(l, { diretora: 'Dispensado' }, `${l.funcionario_nome}: liberada sem assinatura, pronta para o RH.`);
+      case 'unidade': return atualizar(l, comAnotacao({ avaliacao_etapa: 'Na unidade' }, a), `${l.funcionario_nome}: avaliação enviada à unidade.`);
+      case 'dae': return atualizar(l, comAnotacao({ avaliacao_etapa: 'Na DAE' }, a), `${l.funcionario_nome}: avaliação de volta na DAE.`);
+      case 'assinatura': return assinar(l, 'Autorizado', p.diretor_id, p.data, '', a);
+      case 'sem': return atualizar(l, comAnotacao({ diretora: 'Dispensado' }, a), `${l.funcionario_nome}: liberada sem assinatura, pronta para o RH.`);
       case 'proxima': return proximaAvaliacao(l);
       case 'rh':
         if (l.avaliacao_etapa === 'Na unidade') {
-          return atualizar(l, { situacao_rh: 'Enviado ao RH' }, `${l.funcionario_nome}: registrado que a unidade enviou ao RH.`);
+          return atualizar(l, comAnotacao({ situacao_rh: 'Enviado ao RH' }, a), `${l.funcionario_nome}: registrado que a unidade enviou ao RH.`);
         }
-        return setPainel({ id: l.id, tipo: 'rh' });
+        return setPainel({ id: l.id, tipo: 'rh', anotacao: a });
       default: return setErro('Escolha para onde a avaliação vai.');
     }
   }
@@ -303,7 +308,7 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
         principal = (
           <Botao variante="secundario" className={pequeno} carregando={ocup}
             onClick={() => setPainel(painel?.id === l.id && painel.tipo === 'encaminhar' ? null
-              : { id: l.id, tipo: 'encaminhar', destino: null, diretor_id: diretorPadrao(), data: hojeISO() })}>
+              : { id: l.id, tipo: 'encaminhar', destino: null, diretor_id: diretorPadrao(), data: hojeISO(), anotacao: '' })}>
             <ArrowRight className="size-3.5" aria-hidden /> {enviado ? 'Voltou do RH?' : 'Encaminhar'}
           </Botao>
         );
@@ -430,6 +435,14 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
                 {campoData(p.data, (v) => setPainel({ ...p, data: v }))}
               </>
             )}
+            {p.destino && p.destino !== 'proxima' && (
+              <label className="min-w-64 flex-1 text-sm font-semibold text-tinta-suave">
+                Anotação <span className="font-normal">(opcional, fica no caminho)</span>
+                <input value={p.anotacao} maxLength={200} onChange={(e) => setPainel({ ...p, anotacao: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Enter' && encaminhar(l, p)}
+                  placeholder="ex.: guia de remessa nº 1234" className={`${inputCls} mt-1 text-tinta`} />
+              </label>
+            )}
             <Botao disabled={!p.destino} carregando={ocupado === l.id} onClick={() => encaminhar(l, p)}>Confirmar</Botao>
             {fechar}
           </div>
@@ -441,7 +454,7 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
           <p className="mr-auto text-sm">Enviar <strong>{l.protocolo_dae}</strong> ao <strong>{l.destino_rh ?? 'RH'}</strong>:</p>
           <Botao carregando={ocupado === l.id} onClick={() => avisoDeUm(l)}><FileText className="size-4" aria-hidden /> Gerar Aviso só com este</Botao>
           <Botao variante="secundario" disabled={ocupado === l.id}
-            onClick={() => atualizar(l, { situacao_rh: 'Enviado ao RH' }, `${l.protocolo_dae}: marcado como entregue ao RH.`)}>
+            onClick={() => atualizar(l, comAnotacao({ situacao_rh: 'Enviado ao RH' }, painel.anotacao), `${l.protocolo_dae}: marcado como entregue ao RH.`)}>
             <Check className="size-4" aria-hidden /> Já entreguei, sem Aviso
           </Botao>
           {fechar}
@@ -457,8 +470,9 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
               {trilha.map((e, i) => (
                 <li key={i} className="flex items-center gap-2">
                   {i > 0 && <ArrowRight className="size-3.5 text-tinta-suave" aria-hidden />}
-                  <span className="rounded-md bg-white px-2 py-1 ring-1 ring-linha" title={[e.por && `por ${e.por}`, e.obs].filter(Boolean).join(' · ')}>
+                  <span className="rounded-md bg-white px-2 py-1 ring-1 ring-linha" title={e.por ? `registrado por ${e.por}` : undefined}>
                     <strong>{e.evento}</strong> <span className="text-tinta-suave">{dataBR(e.em)}</span>
+                    {e.obs && <span className="block max-w-72 text-xs italic text-tinta">{e.obs}</span>}
                   </span>
                 </li>
               ))}
@@ -563,6 +577,12 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
       {erro && <div className="mt-4"><Aviso>{erro}</Aviso></div>}
       {ok && <div className="mt-4"><Aviso tom="info">{ok}</Aviso></div>}
 
+      {filaEnvio && !carregando && (
+        <p className="mt-4 text-sm text-tinta-suave">
+          Para mandar pedidos, ponto e avaliações juntos no mesmo Aviso, use{' '}
+          <Link href="/envios-rh" className="font-semibold text-azul hover:underline">Envios RH</Link>: lá aparece tudo o que está pronto para o RH.
+        </p>
+      )}
       {filaEnvio && !carregando && livres.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-acento/30 bg-acento-claro/40 px-4 py-3">
           <p className="mr-auto text-sm">
@@ -693,9 +713,10 @@ function situacao(l: Lancamento): { selo: string; linhas: string[] } {
   if (l.categoria === 'avaliacoes') {
     const ultimo = l.avaliacao_trilha?.at(-1);
     const assinatura = l.diretora === 'Dispensado' ? 'Sem assinatura (promoção)' : l.diretora === 'Autorizado' ? `Assinada ${quem}` : 'Falta a assinatura';
-    if (enviado) return { selo: 'Enviado ao RH', linhas: [envio] };
+    const nota = ultimo?.obs ? `“${ultimo.obs}”` : '';
+    if (enviado) return { selo: 'Enviado ao RH', linhas: [envio, nota].filter(Boolean) };
     if (l.avaliacao_etapa === 'Na unidade') {
-      return { selo: 'Na unidade', linhas: [`desde ${dataBR(l.avaliacao_unidade_em)}`, assinatura] };
+      return { selo: 'Na unidade', linhas: [`desde ${dataBR(l.avaliacao_unidade_em)}`, nota, assinatura].filter(Boolean) };
     }
     return {
       selo: assinado(l) ? 'Pronto para o RH' : 'Na DAE',

@@ -11,7 +11,7 @@ import { Aviso, Botao, TabelaWrap, campoCls, tdCls, thCls } from '@/components/u
 
 const SEM_DESTINO = 'Sem destino';
 
-/** Pedidos assinados, agrupados por RH, para gerar o Aviso numerado */
+/** Tudo o que está pronto para o RH (pedidos, ponto e avaliações), agrupado por RH, para gerar um Aviso só */
 export default function EnviosRH() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -29,7 +29,8 @@ export default function EnviosRH() {
       .order('funcionario_nome')
       .then(({ data, error }) => {
         if (!vivo) return;
-        const ls = (data as unknown as Lancamento[]) ?? [];
+        // avaliação que está com a unidade ainda não está na mão da DAE
+        const ls = ((data as unknown as Lancamento[]) ?? []).filter((l) => l.avaliacao_etapa !== 'Na unidade');
         setLista(ls);
         // já marca todos que ainda não estão em nenhum aviso
         setSelecionados(new Set(ls.filter((l) => !primeiro(l.aviso_rh_itens)?.aviso).map((l) => l.id)));
@@ -50,6 +51,12 @@ export default function EnviosRH() {
       g.get(d)!.push(l);
     }
     return [...g.entries()].filter(([, ls]) => ls.length > 0);
+  }, [lista]);
+
+  const porCategoria = useMemo(() => {
+    const c = new Map<string, number>();
+    for (const l of lista) c.set(CATEGORIAS[l.categoria].titulo, (c.get(CATEGORIAS[l.categoria].titulo) ?? 0) + 1);
+    return [...c.entries()];
   }, [lista]);
 
   function alternar(ids: string[], marcar: boolean) {
@@ -80,14 +87,22 @@ export default function EnviosRH() {
     <div className="w-full">
       <h1 className="text-2xl font-bold">Envios RH</h1>
       <p className="mt-1 text-tinta-suave">
-        Pedidos já assinados pela Diretoria, separados por RH. Marque os que vão juntos e gere o Aviso numerado para imprimir.
+        Tudo o que está pronto para o RH num lugar só: pedidos, ponto e avaliações já assinados, separados por RH.
+        Marque o que vai junto e gere um Aviso numerado para imprimir.
       </p>
+      {porCategoria.length > 0 && (
+        <p className="mt-3 flex flex-wrap gap-2 text-sm">
+          {porCategoria.map(([c, n]) => (
+            <span key={c} className="rounded-full bg-acento-claro px-2.5 py-0.5 font-semibold text-acento-escuro">{c}: {n}</span>
+          ))}
+        </p>
+      )}
 
       {erro && <div className="mt-4"><Aviso>{erro}</Aviso></div>}
       {carregando && <p className="mt-6 text-sm text-tinta-suave" role="status">Carregando…</p>}
       {!carregando && lista.length === 0 && (
         <div className="mt-6 rounded-lg border border-dashed border-linha bg-white p-8 text-sm text-tinta-suave">
-          Nenhum pedido assinado aguardando envio. Os pedidos aparecem aqui depois que a Diretoria assina.
+          Nada aguardando envio. Pedidos e avaliações aparecem aqui depois de assinados (avaliações, quando estão na DAE).
         </div>
       )}
 
@@ -103,8 +118,8 @@ export default function EnviosRH() {
                 <h2 className="text-lg font-bold">{semDestino ? 'Sem destino definido' : destino}</h2>
                 <p className="text-sm text-tinta-suave">
                   {semDestino
-                    ? 'Vínculo sem RH definido. Escolha para onde cada pedido vai.'
-                    : `${ls.length} ${ls.length === 1 ? 'pedido' : 'pedidos'}, ${marcados.length} ${marcados.length === 1 ? 'marcado' : 'marcados'}`}
+                    ? 'Vínculo sem RH definido. Escolha para onde cada um vai.'
+                    : `${ls.length} ${ls.length === 1 ? 'item' : 'itens'}, ${marcados.length} ${marcados.length === 1 ? 'marcado' : 'marcados'}`}
                 </p>
               </div>
               {!semDestino && (
