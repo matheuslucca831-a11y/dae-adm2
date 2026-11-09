@@ -5,13 +5,17 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const TAMANHOS = [25, 50, 100];
 
-/** Divide uma lista em páginas. Volta para a página 1 quando a lista muda (filtro, busca, ordenação). */
-export function usePaginacao<T>(itens: T[], inicial = 50) {
+/**
+ * Divide uma lista em páginas. Volta para a página 1 quando a lista muda (filtro, busca, ordenação).
+ * Com `chave`, só volta para a página 1 quando a chave muda (útil quando a lista é editada no lugar).
+ */
+export function usePaginacao<T>(itens: T[], inicial = 50, chave?: string) {
   const [porPagina, setPorPagina] = useState(inicial);
   const [pagina, setPagina] = useState(1);
-  const [anterior, setAnterior] = useState(itens);
-  if (itens !== anterior) {
-    setAnterior(itens);
+  const marca = chave ?? itens;
+  const [anterior, setAnterior] = useState<unknown>(marca);
+  if (marca !== anterior) {
+    setAnterior(marca);
     setPagina(1);
   }
   const paginas = Math.max(1, Math.ceil(itens.length / porPagina));
@@ -26,6 +30,10 @@ export function usePaginacao<T>(itens: T[], inicial = 50) {
 }
 
 type Pag = ReturnType<typeof usePaginacao>;
+
+/** Para tabelas que também são impressas: esconde na tela as linhas de outras páginas, mas imprime todas */
+export const foraDaPagina = (p: Pag, indice: number) =>
+  indice < p.inicio || indice >= p.inicio + p.porPagina ? 'hidden print:table-row' : '';
 
 /** Barra "Mostrando 51–100 de 340" com anterior/próxima e itens por página */
 export function Paginacao({ p, rotulo = 'registros' }: { p: Pag; rotulo?: string }) {

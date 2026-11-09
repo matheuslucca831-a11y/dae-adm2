@@ -6,6 +6,7 @@ import { ArrowLeft, LogOut, MapPinPlus, Printer, UserMinus, UserPlus } from 'luc
 import { createClient } from '@/lib/supabase/client';
 import { competenciaAtual, dataBR, dataHoraBR, hojeISO, mensagemErro, nomeCompetencia } from '@/lib/formato';
 import { MOTIVOS_ENCERRAMENTO, type SituacaoRelacao } from '@/lib/constantes';
+import { Paginacao, foraDaPagina, usePaginacao } from '@/components/Paginacao';
 import { Aviso, Botao, Campo, Selo, SeletorMes, TabelaWrap, inputCls, tdCls, thCls } from '@/components/ui';
 
 type Unidade = { id: string; nome: string; sigla: string | null };
@@ -162,6 +163,7 @@ function DetalheRelacao({
   const foraDaRelacao = lotados.filter((l) => !idsRelacao.has(l.funcionario_id));
   const itensSemLotacao = itens.filter((i) => !idsLotados.has(i.funcionario_id));
   const semLotacao = itensSemLotacao.length;
+  const pag = usePaginacao(itens, 50, relacao.id);
 
   // ---------- ajustes rápidos (sem sair da tela) ----------
   const mesRelacao = nomeCompetencia(competencia);
@@ -285,8 +287,8 @@ function DetalheRelacao({
                   </tr>
                 </thead>
                 <tbody>
-                  {itens.map((i) => (
-                    <tr key={i.id}>
+                  {itens.map((i, n) => (
+                    <tr key={i.id} className={foraDaPagina(pag, n)}>
                       <td className={`${tdCls} font-medium`}>
                         {i.funcionario_nome}
                         {!idsLotados.has(i.funcionario_id) && (
@@ -302,6 +304,7 @@ function DetalheRelacao({
                 </tbody>
               </table>
             </TabelaWrap>
+            <Paginacao p={pag} rotulo="funcionários" />
           </section>
 
           <aside className="space-y-4">

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { competenciaAtual, dataHoraBR, mensagemErro, nomeCompetencia, normalizar } from '@/lib/formato';
 import type { SituacaoRelacao } from '@/lib/constantes';
 import { Aviso, Botao, Selo, SeletorMes, TabelaWrap, inputCls, tdCls, thCls } from '@/components/ui';
+import { Paginacao, foraDaPagina, usePaginacao } from '@/components/Paginacao';
 import BuscaFuncionario, { type ResultadoBusca } from './BuscaFuncionario';
 
 type Relacao = {
@@ -71,6 +72,8 @@ export default function RelacaoMensal({ unidadeNome }: { unidadeNome: string }) 
     const f = normalizar(filtro);
     return f ? itens.filter((i) => normalizar(`${i.funcionario_nome} ${i.matricula} ${i.cargo ?? ''}`).includes(f)) : itens;
   }, [itens, filtro]);
+
+  const pag = usePaginacao(visiveis, 50, `${comp}|${filtro}`);
 
   async function iniciar() {
     setOcupado(true);
@@ -199,8 +202,8 @@ export default function RelacaoMensal({ unidadeNome }: { unidadeNome: string }) 
                         </td>
                       </tr>
                     )}
-                    {visiveis.map((i) => (
-                      <tr key={i.id} className="hover:bg-papel/50">
+                    {visiveis.map((i, n) => (
+                      <tr key={i.id} className={`hover:bg-papel/50 ${foraDaPagina(pag, n)}`}>
                         <td className={`${tdCls} font-medium`}>{i.funcionario_nome}</td>
                         <td className={tdCls}>{i.matricula}</td>
                         <td className={tdCls}>{i.cargo}</td>
@@ -231,6 +234,7 @@ export default function RelacaoMensal({ unidadeNome }: { unidadeNome: string }) 
                   </tbody>
                 </table>
               </TabelaWrap>
+              <Paginacao p={pag} rotulo="funcionários" />
             </section>
 
             {editavel && (
