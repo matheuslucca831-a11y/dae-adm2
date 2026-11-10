@@ -22,7 +22,7 @@ export const FORMAS_CONTRATACAO = [
   'Concurso FSPSS', 'Concurso PMSS', 'Comissionado FSPSS', 'Comissionado PMSS', 'Pessoa Jurídica - PJ', 'Contrato Temporário - FSPSS',
 ];
 /** Forma de contratação → vínculo usado nas regras do sistema */
-const VINCULO_DA_FORMA: Record<string, string> = {
+export const VINCULO_DA_FORMA: Record<string, string> = {
   'Concurso FSPSS': 'FSPSS', 'Comissionado FSPSS': 'FSPSS', 'Contrato Temporário - FSPSS': 'FSPSS',
   'Concurso PMSS': 'Estatutário', 'Comissionado PMSS': 'Estatutário', 'Pessoa Jurídica - PJ': 'Outros',
 };

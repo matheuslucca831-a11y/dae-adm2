@@ -34,6 +34,7 @@ type Linha = {
   cargo: string | null;
   funcao: string | null;
   vinculo: string | null;
+  vinculo_2?: string | null;
   situacao: 'Ativo' | 'Inativo';
   lotacoes: { situacao: string; unidade: { id: string; nome: string; sigla: string | null } | null }[];
 };
@@ -170,7 +171,7 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
       buscarTudo((de, ate) =>
         supabase
           .from('funcionarios')
-          .select('id, nome, matricula, cpf, cargo, funcao, vinculo, situacao, lotacoes(situacao, unidade:unidades(id, nome, sigla))')
+          .select('id, nome, matricula, cpf, cargo, funcao, vinculo, vinculo_2, situacao, lotacoes(situacao, unidade:unidades(id, nome, sigla))')
           .order('nome')
           .order('id')
           .range(de, ate),
@@ -200,7 +201,7 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
     const dig = soDigitos(busca);
     return linhas.filter((l) => {
       if (fSituacao && l.situacao !== fSituacao) return false;
-      if (fVinculo && l.vinculo !== fVinculo) return false;
+      if (fVinculo && l.vinculo !== fVinculo && l.vinculo_2 !== fVinculo) return false;
       const ativas = l.lotacoes.filter((x) => x.situacao === 'Ativa');
       if (fUnidade === 'sem' && ativas.length > 0) return false;
       if (fUnidade && fUnidade !== 'sem' && !ativas.some((x) => x.unidade?.id === fUnidade)) return false;
@@ -429,7 +430,7 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-gray">
                       {l.matricula && <span>#{l.matricula}</span>}
                       {l.cpf && <span>CPF: {formatarCPF(l.cpf)}</span>}
-                      {l.vinculo && <span>Vínculo: {l.vinculo}</span>}
+                      {l.vinculo && <span>Vínculo: {l.vinculo}{l.vinculo_2 ? ` e ${l.vinculo_2}` : ''}</span>}
                       <span className="inline-flex items-center gap-1 text-ink-charcoal font-medium">
                         <Building2 className="size-3 text-slate-gray" />
                         {unidadeTexto}
@@ -504,7 +505,7 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
                     <td className={tdCls}>{l.matricula ?? '—'}</td>
                     <td className={`${tdCls} whitespace-nowrap`}>{formatarCPF(l.cpf)}</td>
                     <td className={tdCls}>{l.cargo ?? '—'}</td>
-                    <td className={`${tdCls} whitespace-nowrap`}>{l.vinculo ?? '—'}</td>
+                    <td className={`${tdCls} whitespace-nowrap`}>{l.vinculo ? (l.vinculo_2 ? `${l.vinculo} e ${l.vinculo_2}` : l.vinculo) : '—'}</td>
                     <td className={tdCls}>
                       {ativas.length
                         ? ativas.map((a) => a.unidade?.sigla || a.unidade?.nome).join(', ')

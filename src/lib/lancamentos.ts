@@ -83,6 +83,10 @@ export type Lancamento = {
   /** 1ª, 2ª... avaliação do mesmo papel; de onde chegou; a anterior; o caminho percorrido */
   avaliacao_rodada: number; avaliacao_chegou_de: 'RH' | 'Unidade' | null; avaliacao_anterior: string | null;
   avaliacao_trilha: EventoTrilha[];
+  /** pedido do 2º vínculo do funcionário (ex.: médico Estatutário e FSPSS) */
+  segundo_vinculo: boolean;
+  /** matrícula do vínculo do pedido */
+  matricula: string | null;
   // O Supabase pode devolver lista ou objeto (relação 1 para 1); use primeiro()
   comunicados_1doc?: Um1Doc | Um1Doc[] | null;
   aviso_rh_itens?: ItemAviso | ItemAviso[] | null;
@@ -93,7 +97,8 @@ export const CAMPOS_LANCAMENTO =
   'data_recebimento, data_inicio, data_retorno, qtd_dias, venda_terco, referencia, quantidade, obs, ' +
   'motivo_ocorrencia, testemunha, horario_entrada, horario_saida_almoco, horario_retorno_almoco, horario_saida, ' +
   'diretora, diretora_obs, diretora_em, diretor_id, diretor_nome, data_assinatura, situacao_rh, destino_rh, enviado_rh_em, baixa_em, ' +
-  'avaliacao_etapa, avaliacao_unidade_em, avaliacao_devolvida_em, avaliacao_rodada, avaliacao_chegou_de, avaliacao_anterior, avaliacao_trilha';
+  'avaliacao_etapa, avaliacao_unidade_em, avaliacao_devolvida_em, avaliacao_rodada, avaliacao_chegou_de, avaliacao_anterior, avaliacao_trilha, ' +
+  'segundo_vinculo, matricula';
 
 /** Para a tabela: inclui 1Doc e Aviso RH */
 export const CAMPOS_TABELA =

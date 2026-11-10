@@ -7,7 +7,9 @@ import { DIAS_SEMANA, FREQUENCIAS } from '@/lib/constantes';
 import { mensagemErro } from '@/lib/formato';
 import { registrarAcesso } from '@/lib/acessos';
 import { Aviso, Botao, Campo, inputCls } from '@/components/ui';
-import FichaProfissional, { FICHA_VAZIA, fichaDoBanco, fichaParaBanco, validarFicha, type FichaDados } from '@/components/ficha/FichaProfissional';
+import FichaProfissional, {
+  FICHA_VAZIA, FORMAS_CONTRATACAO, VINCULO_DA_FORMA, fichaDoBanco, fichaParaBanco, validarFicha, type FichaDados,
+} from '@/components/ficha/FichaProfissional';
 import AtalhosHorario, { SeletorAtalho, juntarLinhas } from '@/components/AtalhosHorario';
 import { DESTINOS_1DOC } from '@/lib/lancamentos';
 import { todosConflitos, type LotacaoBase } from '@/lib/escalas';
@@ -16,6 +18,8 @@ export type UnidadeOpcao = { id: string; nome: string; sigla: string | null; cne
 
 type Dados = FichaDados & {
   obs: string; situacao: 'Ativo' | 'Inativo'; inativo_justificativa: string; exige_1doc: boolean; destino_1doc: string;
+  /** 2º vínculo (ex.: médico Estatutário e FSPSS) */
+  tem_vinculo_2: boolean; vinculo_2: string; forma_contratacao_2: string; matricula_2: string;
 };
 type HorarioForm = { chave: number; dia_semana: string; frequencia: string; entrada: string; saida: string; data_referencia: string };
 type LotacaoForm = { chave: number; unidade_id: string; carga_horaria: string; data_inicio: string; horarios: HorarioForm[] };
@@ -27,6 +31,7 @@ type LotacaoExistente = {
 
 const VAZIO: Dados = {
   ...FICHA_VAZIA, obs: '', situacao: 'Ativo', inativo_justificativa: '', exige_1doc: false, destino_1doc: '',
+  tem_vinculo_2: false, vinculo_2: '', forma_contratacao_2: '', matricula_2: '',
 };
 
 let seq = 0;
@@ -39,6 +44,9 @@ function paraBanco(d: Dados) {
   return {
     ...fichaParaBanco(d), obs: d.obs.trim() || null, exige_1doc: d.exige_1doc,
     destino_1doc: d.exige_1doc ? d.destino_1doc.trim() || null : null,
+    vinculo_2: d.tem_vinculo_2 ? d.vinculo_2 || null : null,
+    forma_contratacao_2: d.tem_vinculo_2 ? d.forma_contratacao_2 || null : null,
+    matricula_2: d.tem_vinculo_2 ? d.matricula_2.trim() || null : null,
   };
 }
 
@@ -81,6 +89,8 @@ export default function FormFuncionario({
           ...VAZIO, ...fichaDoBanco(data),
           obs: data.obs ?? '', situacao: data.situacao, inativo_justificativa: data.inativo_justificativa ?? '',
           exige_1doc: !!data.exige_1doc, destino_1doc: data.destino_1doc ?? '',
+          tem_vinculo_2: !!data.vinculo_2, vinculo_2: data.vinculo_2 ?? '',
+          forma_contratacao_2: data.forma_contratacao_2 ?? '', matricula_2: data.matricula_2 ?? '',
         });
         setExistentes((data.lotacoes as unknown as LotacaoExistente[]) ?? []);
       }
@@ -101,6 +111,7 @@ export default function FormFuncionario({
     const ficha = validarFicha(dados, { completa: !editando });
     if (ficha) return ficha;
     if (dados.situacao === 'Inativo' && !dados.inativo_justificativa.trim()) return 'Escreva a justificativa da inativação.';
+    if (dados.tem_vinculo_2 && !dados.vinculo_2) return 'Escolha o segundo vínculo (ou desmarque "Tem outro vínculo ativo").';
     if (novas.some((l) => !l.unidade_id)) return 'Escolha a unidade de cada lotação.';
     if (new Set(novas.map((l) => l.unidade_id)).size !== novas.length) return 'Há duas lotações na mesma unidade.';
     return null;
@@ -210,6 +221,44 @@ export default function FormFuncionario({
             <>
               <FichaProfissional valor={dados} onChange={(p) => setDados((d) => ({ ...d, ...p }))} vinculos={vinculos} completa={!editando} />
               {editando && <p className="-mt-3 text-xs text-tinta-suave">Cadastro antigo pode ficar com campos em branco; complete quando tiver a ficha.</p>}
+
+              <fieldset className="rounded-lg border border-linha bg-white p-4">
+                <legend className="px-1 text-sm font-bold">Segundo vínculo</legend>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={dados.tem_vinculo_2}
+                    onChange={(e) => setDados((d) => ({ ...d, tem_vinculo_2: e.target.checked }))} className="size-4 accent-[var(--acento)]" />
+                  Tem outro vínculo ativo (ex.: médico Estatutário e FSPSS, ou duas matrículas na Prefeitura)
+                </label>
+                {dados.tem_vinculo_2 && (
+                  <>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-6">
+                      <Campo rotulo="Vínculo *" className="sm:col-span-2">
+                        <select value={dados.vinculo_2} onChange={(e) => set('vinculo_2', e.target.value)} className={inputCls}>
+                          <option value="">Selecione</option>
+                          {vinculos.map((v) => <option key={v}>{v}</option>)}
+                        </select>
+                      </Campo>
+                      <Campo rotulo="Forma de contratação" className="sm:col-span-2">
+                        <select value={dados.forma_contratacao_2}
+                          onChange={(e) => {
+                            const forma = e.target.value;
+                            const v = VINCULO_DA_FORMA[forma];
+                            setDados((d) => ({ ...d, forma_contratacao_2: forma, ...(v && vinculos.includes(v) ? { vinculo_2: v } : {}) }));
+                          }} className={inputCls}>
+                          <option value="">Selecione</option>
+                          {FORMAS_CONTRATACAO.map((f) => <option key={f}>{f}</option>)}
+                        </select>
+                      </Campo>
+                      <Campo rotulo="Matrícula deste vínculo" className="sm:col-span-2">
+                        <input value={dados.matricula_2} onChange={(e) => set('matricula_2', e.target.value)} className={inputCls} />
+                      </Campo>
+                    </div>
+                    <p className="mt-2 text-xs text-tinta-suave">
+                      Nos pedidos deste funcionário vai aparecer a escolha do vínculo. O RH de destino e as regras de ponto seguem o vínculo escolhido.
+                    </p>
+                  </>
+                )}
+              </fieldset>
 
               <fieldset className="rounded-lg border border-linha bg-white p-4">
                 <legend className="px-1 text-sm font-bold">Outras informações</legend>

@@ -6,6 +6,7 @@ export type FuncionarioFicha = {
   forma_contratacao?: string | null; carga_horaria_semanal?: number | null;
   conselho?: string | null; numero_conselho?: string | null; conselho_uf?: string | null;
   exige_1doc?: boolean; destino_1doc?: string | null; obs?: string | null;
+  vinculo_2?: string | null; forma_contratacao_2?: string | null; matricula_2?: string | null;
 };
 
 /** Dados da ficha em modo leitura (perfil da Sede e "Meus funcionários" da unidade) */
@@ -21,6 +22,7 @@ export default function DadosFicha({ f, mostrar1Doc = true, className = '' }: { 
     ['CBO', f.cbo],
     ['Vínculo', f.vinculo],
     ['Forma de contratação', f.forma_contratacao],
+    ...(f.vinculo_2 ? [['2º vínculo', [f.vinculo_2, f.forma_contratacao_2, f.matricula_2 && `matr. ${f.matricula_2}`].filter(Boolean).join(' · ')] as [string, string]] : []),
     ['CH semanal', f.carga_horaria_semanal ? `${f.carga_horaria_semanal}h` : null],
     ['Conselho de classe', [f.conselho, f.numero_conselho, f.conselho_uf].filter(Boolean).join(' ')],
     ...(mostrar1Doc ? [['1Doc', f.exige_1doc ? `Sim, ${f.destino_1doc}` : 'Não'] as [string, string]] : []),

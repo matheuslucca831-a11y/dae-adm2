@@ -13,6 +13,7 @@ import { Aviso, Botao, Campo, inputCls } from '@/components/ui';
 
 type Opcao = {
   id: string; nome: string; matricula: string | null; cargo: string | null; vinculo: string | null;
+  vinculo_2?: string | null; matricula_2?: string | null;
   lotacoes: { situacao: string; unidade_id: string }[];
 };
 type Unidade = { id: string; nome: string };
@@ -36,6 +37,8 @@ export default function FormLancamento({
     lancamento ? { id: lancamento.funcionario_id, nome: lancamento.funcionario_nome, matricula: null, cargo: null, vinculo: lancamento.vinculo, lotacoes: [] } : null);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [busca, setBusca] = useState(l?.funcionario_nome ?? '');
+  // Funcionário com dois vínculos: de qual vínculo é este pedido
+  const [segundo, setSegundo] = useState(l?.segundo_vinculo ?? false);
   const [listaAberta, setListaAberta] = useState(false);
   const [f, setF] = useState({
     funcionario_id: l?.funcionario_id ?? '',
@@ -89,6 +92,8 @@ export default function FormLancamento({
 
   function escolher(o: Opcao) {
     const ativas = o.lotacoes.filter((x) => x.situacao === 'Ativa');
+    // se o tipo exige um vínculo e só o 2º serve, já escolhe o 2º
+    setSegundo(!!(o.vinculo_2 && vinculoExigido && o.vinculo !== vinculoExigido && o.vinculo_2 === vinculoExigido));
     setF((x) => ({ ...x, funcionario_id: o.id, unidade_id: ativas.length === 1 ? ativas[0].unidade_id : x.unidade_id }));
     setBusca(o.nome);
     setEscolhido(o);
@@ -97,7 +102,22 @@ export default function FormLancamento({
 
   const modo = modoPonto(cat, f.tipo);
   const vinculoExigido = cat === 'ponto_ausencias' ? VINCULO_EXIGIDO[f.tipo] : undefined;
-  const vinculoErrado = !!(vinculoExigido && escolhido && escolhido.vinculo !== vinculoExigido);
+  const doisVinculos = !!escolhido?.vinculo_2;
+  const vinculoDoPedido = doisVinculos && segundo ? escolhido?.vinculo_2 : escolhido?.vinculo;
+  const vinculoErrado = !!(vinculoExigido && escolhido && vinculoDoPedido !== vinculoExigido);
+
+  // No editar, busca se o funcionário tem 2º vínculo
+  useEffect(() => {
+    if (!l) return;
+    let vivo = true;
+    supabase.from('funcionarios').select('matricula, vinculo, vinculo_2, matricula_2').eq('id', l.funcionario_id).maybeSingle()
+      .then(({ data }) => {
+        if (vivo && data) setEscolhido((e) => (e ? { ...e, ...(data as Partial<Opcao>) } : e));
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [supabase, l]);
 
   // Busca no banco enquanto digita (funciona com qualquer quantidade de funcionários).
   // O banco já limita ao que este usuário pode ver.
@@ -111,12 +131,13 @@ export default function FormLancamento({
     const timer = setTimeout(async () => {
       // "_" casa qualquer letra: assim "jose" encontra "José"
       const padrao = `%${t.replace(/[aeiouc]/g, '_')}%`;
-      let q = supabase.from('funcionarios').select('id, nome, matricula, cargo, vinculo, lotacoes(situacao, unidade_id)')
-        .eq('situacao', 'Ativo').or(`nome.ilike.${padrao},matricula.ilike.${padrao}`).order('nome').limit(40);
-      if (vinculoExigido) q = q.eq('vinculo', vinculoExigido);
-      const { data } = await q;
+      const { data } = await supabase.from('funcionarios')
+        .select('id, nome, matricula, cargo, vinculo, vinculo_2, matricula_2, lotacoes(situacao, unidade_id)')
+        .eq('situacao', 'Ativo').or(`nome.ilike.${padrao},matricula.ilike.${padrao},matricula_2.ilike.${padrao}`).order('nome').limit(60);
       if (!vivo) return;
-      setOpcoes(((data as Opcao[]) ?? []).filter((o) => normalizar(`${o.nome} ${o.matricula ?? ''}`).includes(t)).slice(0, 8));
+      setOpcoes(((data as Opcao[]) ?? [])
+        .filter((o) => !vinculoExigido || o.vinculo === vinculoExigido || o.vinculo_2 === vinculoExigido)
+        .filter((o) => normalizar(`${o.nome} ${o.matricula ?? ''} ${o.matricula_2 ?? ''}`).includes(t)).slice(0, 8));
     }, 250);
     return () => {
       vivo = false;
@@ -162,6 +183,7 @@ export default function FormLancamento({
     const v = (s: string) => s.trim() || null;
     const dados = {
       categoria: cat, tipo: f.tipo, funcionario_id: f.funcionario_id, data_recebimento: f.data_recebimento || hojeISO(),
+      ...(doisVinculos || l?.segundo_vinculo ? { segundo_vinculo: doisVinculos && segundo } : {}),
       data_inicio: tem('periodo') ? f.data_inicio || null : null,
       qtd_dias: tem('periodo') ? Number(f.qtd_dias) || (f.data_inicio ? 1 : null) : null,
       data_retorno: tem('periodo') ? f.data_retorno || null : null,
@@ -250,7 +272,9 @@ export default function FormLancamento({
                     <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => escolher(o)}
                       className="w-full px-3 py-2 text-left hover:bg-acento-claro">
                       <span className="block text-sm font-medium">{o.nome}</span>
-                      <span className="block text-xs text-tinta-suave">{[o.matricula && `Matrícula ${o.matricula}`, o.cargo].filter(Boolean).join(', ')}</span>
+                      <span className="block text-xs text-tinta-suave">
+                        {[o.matricula && `Matrícula ${o.matricula}`, o.cargo, o.vinculo_2 && `dois vínculos: ${o.vinculo} e ${o.vinculo_2}`].filter(Boolean).join(', ')}
+                      </span>
                     </button>
                   </li>
                 ))}
@@ -258,11 +282,31 @@ export default function FormLancamento({
             )}
             {vinculoExigido && (
               <p className={`mt-1 text-xs ${vinculoErrado ? 'font-semibold text-erro' : 'text-tinta-suave'}`}>
-                {vinculoErrado ? `${escolhido?.nome} é ${escolhido?.vinculo ?? 'sem vínculo'}. ` : ''}
+                {vinculoErrado ? `${doisVinculos ? 'O vínculo escolhido é' : `${escolhido?.nome} é`} ${vinculoDoPedido ?? 'sem vínculo'}. ` : ''}
                 {f.tipo === TIPO_CARTAO ? 'Cartão de ponto mensal: só Estatutários.' : 'Ocorrência de ponto: só funcionários FSPSS.'}
               </p>
             )}
           </div>
+
+          {doisVinculos && escolhido && (
+            <div className="sm:col-span-2">
+              <span className="mb-1 block text-xs font-semibold text-tinta-suave">Vínculo deste pedido *</span>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Vínculo deste pedido">
+                {[false, true].map((seg) => {
+                  const vin = seg ? escolhido.vinculo_2 : escolhido.vinculo;
+                  const mat = seg ? escolhido.matricula_2 : escolhido.matricula;
+                  return (
+                    <label key={String(seg)}
+                      className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${segundo === seg ? 'border-acento bg-acento-claro' : 'border-linha bg-white'}`}>
+                      <input type="radio" name="vinculo-pedido" checked={segundo === seg} onChange={() => setSegundo(seg)}
+                        disabled={!!l && l.situacao_rh === 'Enviado ao RH'} className="size-4 accent-[var(--acento)]" />
+                      <span><strong>{vin ?? 'Sem vínculo'}</strong>{mat ? <span className="text-tinta-suave"> · matr. {mat}</span> : null}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {central && (
             <Campo rotulo="Unidade" className="sm:col-span-2">

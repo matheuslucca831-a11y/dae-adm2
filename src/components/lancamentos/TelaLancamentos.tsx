@@ -649,7 +649,7 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
                     <td className={tdCls}>
                       <span className="font-medium">{l.funcionario_nome}</span>
                       <span className="block text-xs text-tinta-suave">
-                        {[l.protocolo_dae, central && l.unidade_nome, l.vinculo].filter(Boolean).join(' · ')}
+                        {[l.protocolo_dae, central && l.unidade_nome, l.segundo_vinculo ? `${l.vinculo} (2º vínculo)` : l.vinculo].filter(Boolean).join(' · ')}
                       </span>
                     </td>
                     <td className={tdCls}>

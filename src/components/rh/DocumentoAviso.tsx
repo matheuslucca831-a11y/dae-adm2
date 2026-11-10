@@ -24,7 +24,7 @@ export default function DocumentoAviso({ avisoId, onVoltar }: { avisoId: string;
   useEffect(() => {
     let vivo = true;
     supabase.from('avisos_rh')
-      .select(`id, numero, destino, data, situacao, enviado_em, aviso_rh_itens(lancamento:lancamentos(${CAMPOS_LANCAMENTO}))`)
+      .select(`id, numero, destino, data, situacao, enviado_em, aviso_rh_itens(lancamento:lancamentos(${CAMPOS_LANCAMENTO}, funcionario:funcionarios(vinculo_2)))`)
       .eq('id', avisoId).single()
       .then(({ data, error }) => {
         if (!vivo) return;
@@ -40,7 +40,12 @@ export default function DocumentoAviso({ avisoId, onVoltar }: { avisoId: string;
     const g: Record<string, Lancamento[]> = {};
     for (const it of aviso?.aviso_rh_itens ?? []) {
       if (!it.lancamento) continue;
-      (g[secaoDocumento(it.lancamento)] ??= []).push(it.lancamento);
+      // quem tem dois vínculos: o RH precisa saber de qual matrícula é o pedido
+      const dois = !!(it.lancamento as Lancamento & { funcionario?: { vinculo_2: string | null } | null }).funcionario?.vinculo_2;
+      const l = dois
+        ? { ...it.lancamento, funcionario_nome: `${it.lancamento.funcionario_nome} (${[it.lancamento.vinculo, it.lancamento.matricula && `matr. ${it.lancamento.matricula}`].filter(Boolean).join(', ')})` }
+        : it.lancamento;
+      (g[secaoDocumento(l)] ??= []).push(l);
     }
     Object.values(g).forEach((ls) => ls.sort((a, b) => a.funcionario_nome.localeCompare(b.funcionario_nome, 'pt-BR')));
     return g;
