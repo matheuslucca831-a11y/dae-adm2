@@ -178,6 +178,7 @@ export default function FormLancamento({
       if (f.motivo_ocorrencia === 'Outros' && !f.obs.trim()) return setErro('Descreva a ocorrência.');
     }
     if (modo === 'cartao' && !f.mes_ref) return setErro('Informe o mês de referência do cartão.');
+    if (cat === 'requisicoes' && !f.obs.trim()) return setErro('Descreva a requisição.');
     if (tem('periodo') && !cfg.periodoOpcional && (!f.data_inicio || !(Number(f.qtd_dias) > 0))) return setErro('Informe a data de saída e a quantidade de dias.');
     if (f.data_retorno && f.data_inicio && f.data_retorno < f.data_inicio) return setErro('O retorno não pode ser antes da saída.');
     const ref = modo === 'cartao' ? `${f.mes_ref.slice(5, 7)}/${f.mes_ref.slice(0, 4)}` : '';
@@ -443,7 +444,7 @@ export default function FormLancamento({
 
           <Campo className="sm:col-span-2" rotulo={
             modo === 'ocorrencia' ? `Descreva a ocorrência e os documentos anexos${f.motivo_ocorrencia === 'Outros' ? ' *' : ''}`
-              : modo === 'cartao' ? 'Justificativas do mês' : 'Observação'}>
+              : modo === 'cartao' ? 'Justificativas do mês' : cat === 'requisicoes' ? 'Descreva a requisição * (ex.: novo horário, qual folga/férias cancelar)' : 'Observação'}>
             <textarea rows={modo === 'padrao' ? 2 : 3} value={f.obs} onChange={(e) => set('obs', e.target.value)} className={inputCls} />
           </Campo>
 

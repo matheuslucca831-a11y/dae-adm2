@@ -13,7 +13,7 @@ import { Paginacao, usePaginacao } from '@/components/Paginacao';
 
 type Visao = 'andamento' | 'atencao' | 'concluidos';
 const VISOES: [Visao, string][] = [['andamento', 'Em andamento'], ['atencao', 'Devolvidos / não autorizados'], ['concluidos', 'Concluídos']];
-const CATS: Categoria[] = ['folgas_abonos', 'ferias_lp', 'he_bh', 'ponto_ausencias', 'avaliacoes'];
+const CATS: Categoria[] = ['folgas_abonos', 'ferias_lp', 'he_bh', 'ponto_ausencias', 'avaliacoes', 'requisicoes'];
 
 /** Etapas explicadas no topo da tela */
 const PASSOS_PEDIDO = [

@@ -160,6 +160,7 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
   }, [consultaUrl]);
   const [fUnidade, setFUnidade] = useState('');
   const [fVinculo, setFVinculo] = useState('');
+  const [fCargo, setFCargo] = useState('');
   const [fSituacao, setFSituacao] = useState<'Ativo' | 'Inativo' | ''>('Ativo');
   const [modoVisualizacao, setModoVisualizacao] = useState<'cards' | 'tabela'>('cards');
 
@@ -202,6 +203,7 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
     return linhas.filter((l) => {
       if (fSituacao && l.situacao !== fSituacao) return false;
       if (fVinculo && l.vinculo !== fVinculo && l.vinculo_2 !== fVinculo) return false;
+      if (fCargo && (fCargo === 'MÉDICO (todos)' ? !(l.cargo ?? '').startsWith('MÉDIC') : l.cargo !== fCargo)) return false;
       const ativas = l.lotacoes.filter((x) => x.situacao === 'Ativa');
       if (fUnidade === 'sem' && ativas.length > 0) return false;
       if (fUnidade && fUnidade !== 'sem' && !ativas.some((x) => x.unidade?.id === fUnidade)) return false;
@@ -211,9 +213,16 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
       }
       return true;
     });
-  }, [linhas, busca, fUnidade, fVinculo, fSituacao]);
+  }, [linhas, busca, fUnidade, fVinculo, fCargo, fSituacao]);
 
-  const pag = usePaginacao(filtradas, 25);
+  const cargos = useMemo(() => {
+    const cs = [...new Set(linhas.map((l) => l.cargo).filter(Boolean))].sort() as string[];
+    // atalho para todas as especialidades médicas de uma vez
+    return cs.some((c) => c.startsWith('MÉDIC')) ? ['MÉDICO (todos)', ...cs] : cs;
+  }, [linhas]);
+
+  // Só volta para a página 1 quando o filtro muda (salvar um cadastro mantém a página)
+  const pag = usePaginacao(filtradas, 25, `${busca}|${fUnidade}|${fVinculo}|${fCargo}|${fSituacao}`);
 
   function abrir(id: string | null) {
     setEditandoId(id);
@@ -320,6 +329,20 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
             {vinculos.map((v) => (
               <option key={v} value={v}>
                 {v}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={fCargo}
+            onChange={(e) => setFCargo(e.target.value)}
+            aria-label="Filtrar por Cargo"
+            className="max-w-56 rounded-full border border-linha bg-white px-3.5 py-1.5 text-xs text-ink-charcoal outline-none focus:border-electric-cobalt"
+          >
+            <option value="">Todos os Cargos</option>
+            {cargos.map((c) => (
+              <option key={c} value={c}>
+                {c}
               </option>
             ))}
           </select>

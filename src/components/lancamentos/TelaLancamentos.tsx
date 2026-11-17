@@ -21,8 +21,10 @@ import FormLancamento from './FormLancamento';
 import Painel1Doc from './Painel1Doc';
 
 /** Filas de trabalho da DAE e visões da unidade */
-type Modo = 'dae' | 'unidade' | 'assinatura' | 'enviar' | 'andamento' | 'periodo';
+type Modo = 'dae' | 'unidade' | 'assinatura' | 'enviar' | 'umdoc' | 'andamento' | 'periodo';
 const MODOS_PEDIDOS: [Modo, string][] = [['assinatura', 'Aguardando assinatura'], ['enviar', 'Prontos para o RH'], ['periodo', 'Todos (por período)']];
+/** Férias e folgas: também a fila do que falta comunicar pelo 1Doc */
+const MODOS_PEDIDOS_1DOC: [Modo, string][] = [['assinatura', 'Aguardando assinatura'], ['enviar', 'Prontos para o RH'], ['umdoc', '1Doc pendente'], ['periodo', 'Todos (por período)']];
 /** Avaliações: sem ordem fixa; a fila diz onde o papel está */
 const MODOS_AVALIACOES: [Modo, string][] = [['dae', 'Na DAE'], ['unidade', 'Com a unidade'], ['enviar', 'Prontas para o RH'], ['periodo', 'Todas (por período)']];
 const MODOS_UNIDADE: [Modo, string][] = [['andamento', 'Em andamento'], ['periodo', 'Todos (por período)']];
@@ -34,6 +36,7 @@ function filtrosDaFila(modo: Modo, soAvaliacoes: boolean): Filtro[] {
     case 'dae': return [['avaliacao_etapa', 'Na DAE'], ['situacao_rh', 'Aguardando autorização']];
     case 'unidade': return [['avaliacao_etapa', 'Na unidade'], ['situacao_rh', [...SITUACOES_ANDAMENTO]]];
     case 'assinatura': return [['diretora', 'Aguardando']];
+    case 'umdoc': return [['comunicados_1doc.situacao', 'Pendente']];
     case 'enviar': return soAvaliacoes
       ? [['situacao_rh', 'Autorizado / Aguardando envio'], ['avaliacao_etapa', 'Na DAE']]
       : [['situacao_rh', 'Autorizado / Aguardando envio']];
@@ -74,7 +77,9 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
   const dataPadrao = unica?.dataPrincipal ?? 'data_recebimento';
   const tipos = [...new Set(cats.flatMap((c) => CATEGORIAS[c].tipos))];
   const soAvaliacoes = categorias.length === 1 && categorias[0] === 'avaliacoes';
-  const modos = central ? (soAvaliacoes ? MODOS_AVALIACOES : MODOS_PEDIDOS) : MODOS_UNIDADE;
+  const modos = central
+    ? (soAvaliacoes ? MODOS_AVALIACOES : categorias.some((c) => CATEGORIAS[c].temUmDoc) ? MODOS_PEDIDOS_1DOC : MODOS_PEDIDOS)
+    : MODOS_UNIDADE;
   const nome = soAvaliacoes ? { um: 'avaliação', muitos: 'avaliações' } : { um: 'pedido', muitos: 'pedidos' };
 
   const mesAtual = { de: competenciaAtual(), ate: fimDoMes(competenciaAtual()) };
@@ -87,7 +92,7 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
-  const filtrosVazios = { busca: '', unidade: '', vinculo: '', tipo: '' };
+  const filtrosVazios = { busca: '', unidade: '', vinculo: '', tipo: '', cargo: '' };
   const [fil, setFil] = useState(filtrosVazios);
   const [maisFiltros, setMaisFiltros] = useState(false);
   const [ordem, setOrdem] = useState<Ordem>({ chave: 'data_recebimento', dir: 1 });
@@ -122,7 +127,9 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
     (async () => {
       const listaCats = chaveCats.split(',');
       const consulta = (de: number, ate: number) => {
-        let q = supabase.from('lancamentos').select(CAMPOS_TABELA).in('categoria', listaCats);
+        // fila do 1Doc: só os pedidos com comunicação pendente (junção obrigatória)
+        const campos = modo === 'umdoc' ? CAMPOS_TABELA.replace('comunicados_1doc(', 'comunicados_1doc!inner(') : CAMPOS_TABELA;
+        let q = supabase.from('lancamentos').select(campos).in('categoria', listaCats);
         const f = filtrosDaFila(modo, soAvaliacoes);
         if (f.length) f.forEach(([col, val]) => { q = Array.isArray(val) ? q.in(col, val) : q.eq(col, val); });
         else if (modo === 'andamento') q = q.in('situacao_rh', [...SITUACOES_ANDAMENTO, 'Devolvido']);
@@ -134,7 +141,8 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
       };
       const filas = central ? modos.map(([m]) => m).filter((m) => filtrosDaFila(m, soAvaliacoes).length) : [];
       const contar = (m: Modo) => {
-        let c = supabase.from('lancamentos').select('id', { count: 'exact', head: true }).in('categoria', listaCats);
+        let c = supabase.from('lancamentos').select(m === 'umdoc' ? 'id, comunicados_1doc!inner(situacao)' : 'id', { count: 'exact', head: true })
+          .in('categoria', listaCats);
         filtrosDaFila(m, soAvaliacoes).forEach(([col, val]) => { c = Array.isArray(val) ? c.in(col, val) : c.eq(col, val); });
         return c;
       };
@@ -157,12 +165,14 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
   // ---------- Filtros e ordenação (na tela) ----------
   const opcoesUnidade = useMemo(() => [...new Set(lista.map((l) => l.unidade_nome).filter(Boolean))].sort() as string[], [lista]);
   const opcoesVinculo = useMemo(() => [...new Set(lista.map((l) => l.vinculo).filter(Boolean))].sort() as string[], [lista]);
+  const opcoesCargo = useMemo(() => [...new Set(lista.map((l) => l.funcionario?.cargo).filter(Boolean))].sort() as string[], [lista]);
 
   const visiveis = useMemo(() => {
     const t = normalizar(fil.busca);
     const arr = lista.filter((l) =>
       (!fil.unidade || l.unidade_nome === fil.unidade) &&
       (!fil.vinculo || l.vinculo === fil.vinculo) &&
+      (!fil.cargo || l.funcionario?.cargo === fil.cargo) &&
       (!fil.tipo || l.tipo === fil.tipo) &&
       (!t || normalizar(`${l.funcionario_nome} ${l.protocolo_dae} ${l.obs ?? ''} ${l.unidade_nome ?? ''}`).includes(t)));
     return arr.sort((a, b) => {
@@ -171,9 +181,11 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
       return r * ordem.dir || a.protocolo_dae.localeCompare(b.protocolo_dae);
     });
   }, [lista, fil, ordem]);
-  const pag = usePaginacao(visiveis);
+  // salvar/assinar recarrega a lista mas mantém a página; trocar fila, filtro ou ordem volta para a 1
+  const pag = usePaginacao(visiveis, 50,
+    `${modo}|${chaveCats}|${JSON.stringify(fil)}|${periodo.campo}|${periodo.de}|${periodo.ate}|${String(ordem.chave)}|${ordem.dir}`);
 
-  const nFiltrosExtras = [fil.unidade, fil.vinculo, fil.tipo].filter(Boolean).length;
+  const nFiltrosExtras = [fil.unidade, fil.vinculo, fil.tipo, fil.cargo].filter(Boolean).length;
   const temFiltro = !!fil.busca || nFiltrosExtras > 0;
 
   function trocarModo(m: Modo) {
@@ -303,7 +315,13 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
     let principal: React.ReactNode = null;
     // avaliação enviada cuja próxima já foi registrada: nada mais a fazer
     const temProxima = enviado && lista.some((x) => x.avaliacao_anterior === l.id);
-    if (l.categoria === 'avaliacoes') {
+    if (modo === 'umdoc') {
+      principal = (
+        <Botao variante="secundario" className={pequeno} onClick={() => setUmDoc(l)}>
+          <FileText className="size-3.5" aria-hidden /> Comunicação 1Doc
+        </Botao>
+      );
+    } else if (l.categoria === 'avaliacoes') {
       if (!temProxima) {
         principal = (
           <Botao variante="secundario" className={pequeno} carregando={ocup}
@@ -567,6 +585,10 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
               <select value={fil.tipo} onChange={(e) => setFil({ ...fil, tipo: e.target.value })} aria-label="Tipo" className={campoCls}>
                 <option value="">Todos os tipos</option>
                 {tipos.map((t) => <option key={t}>{t}</option>)}
+              </select>
+              <select value={fil.cargo} onChange={(e) => setFil({ ...fil, cargo: e.target.value })} aria-label="Cargo" className={campoCls}>
+                <option value="">Todos os cargos</option>
+                {opcoesCargo.map((c) => <option key={c}>{c}</option>)}
               </select>
               {temFiltro && <Botao variante="discreto" onClick={() => setFil(filtrosVazios)}>Limpar</Botao>}
             </>

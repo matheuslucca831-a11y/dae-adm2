@@ -9,7 +9,7 @@ export const SECOES_DOC = [
   { id: 'ferias', titulo: 'Férias / LP', colunas: ['Profissional', 'Tipo', 'Saída', 'Qtd.'] },
   { id: 'he', titulo: 'HE / Compensação de horas', colunas: ['Profissional', 'Tipo', 'Ref.', 'Qtd.'] },
   { id: 'avaliacao', titulo: 'Avaliação de desempenho', colunas: ['Profissional'] },
-  { id: 'geral', titulo: 'Requisição geral', colunas: ['Profissional', 'Assunto'] },
+  { id: 'geral', titulo: 'Requisições gerais', colunas: ['Profissional', 'Assunto'] },
 ] as const;
 
 export type SecaoId = (typeof SECOES_DOC)[number]['id'];
@@ -45,6 +45,12 @@ export function celulas(secao: SecaoId, l: Lancamento): string[] {
     case 'ferias': return [nome, l.tipo + (l.venda_terco ? ' (venda de 1/3)' : ''), dataBR(l.data_inicio), dias(l)];
     case 'he': return [nome, l.tipo, l.referencia ?? '', l.quantidade ?? ''];
     case 'avaliacao': return [nome + (l.referencia ? ` (${l.referencia})` : '')];
-    case 'geral': return [nome, l.obs || l.tipo];
+    case 'geral': {
+      // requisição: "Alteração de horário (01/12/2026): texto da requisição"
+      const tipo = l.tipo === 'Outro' || l.tipo === 'Outra requisição' ? '' : l.tipo;
+      const data = l.data_inicio ? dataBR(l.data_inicio) : '';
+      const cab = [tipo, data && `(${data})`].filter(Boolean).join(' ');
+      return [nome, [cab, l.obs].filter(Boolean).join(': ') || l.tipo];
+    }
   }
 }

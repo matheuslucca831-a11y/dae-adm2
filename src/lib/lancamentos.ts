@@ -1,6 +1,6 @@
 /** Configuração de cada aba de lançamento. As telas leem daqui. */
 export type Campo = 'periodo' | 'venda_terco' | 'referencia' | 'quantidade';
-export type Categoria = 'ferias_lp' | 'folgas_abonos' | 'he_bh' | 'ponto_ausencias' | 'avaliacoes';
+export type Categoria = 'ferias_lp' | 'folgas_abonos' | 'he_bh' | 'ponto_ausencias' | 'avaliacoes' | 'requisicoes';
 
 export type ConfigCategoria = {
   titulo: string;
@@ -38,6 +38,12 @@ export const CATEGORIAS: Record<Categoria, ConfigCategoria> = {
     titulo: 'Ponto / Ausências', descricao: 'Ocorrências de ponto, atestados e declarações.',
     tipos: ['Ocorrência de ponto', 'Atestado', 'Declaração', 'Cartão/Espelho de Ponto + Justificativa', 'Outro'],
     campos: ['periodo', 'referencia'], dataPrincipal: 'data_recebimento', unidadeLanca: false, temUmDoc: false,
+    periodoOpcional: true,
+  },
+  requisicoes: {
+    titulo: 'Requisições gerais', descricao: 'Alteração de horário, cancelamento de folga ou férias e outros pedidos ao RH.',
+    tipos: ['Alteração de horário', 'Cancelamento de folga', 'Cancelamento de férias', 'Outra requisição'],
+    campos: ['periodo'], dataPrincipal: 'data_recebimento', unidadeLanca: false, temUmDoc: false,
     periodoOpcional: true,
   },
   avaliacoes: {
@@ -90,6 +96,8 @@ export type Lancamento = {
   /** a unidade mandou direto ao RH pelo 1Doc; a DAE só registrou */
   enviado_1doc: boolean;
   numero_1doc: string | null;
+  /** só nas listas (CAMPOS_TABELA): cargo atual do funcionário, para filtrar */
+  funcionario?: { cargo: string | null } | null;
   // O Supabase pode devolver lista ou objeto (relação 1 para 1); use primeiro()
   comunicados_1doc?: Um1Doc | Um1Doc[] | null;
   aviso_rh_itens?: ItemAviso | ItemAviso[] | null;
@@ -105,7 +113,7 @@ export const CAMPOS_LANCAMENTO =
 
 /** Para a tabela: inclui 1Doc e Aviso RH */
 export const CAMPOS_TABELA =
-  CAMPOS_LANCAMENTO + ', comunicados_1doc(id, situacao), aviso_rh_itens(aviso:avisos_rh(id, numero))';
+  CAMPOS_LANCAMENTO + ', comunicados_1doc(id, situacao), aviso_rh_itens(aviso:avisos_rh(id, numero)), funcionario:funcionarios(cargo)';
 
 /** Pode editar enquanto não foi assinado (ou foi devolvido) */
 export const podeEditar = (l: Lancamento) =>

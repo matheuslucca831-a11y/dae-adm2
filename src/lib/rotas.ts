@@ -18,7 +18,7 @@ export const ROTAS: Rota[] = [
   { path: '/equipe',          titulo: 'Meus funcionários',      descricao: 'Dados e horários dos funcionários lotados na unidade.', icone: Contact, somenteUnidade: true },
   { path: '/sugestoes',       titulo: 'Sugerir cadastro',       descricao: 'Sugira à DAE o cadastro de um funcionário e os dias dele na unidade.', icone: UserPlus, somenteUnidade: true },
   { path: '/acompanhar',      titulo: 'Acompanhar pedidos',     descricao: 'Em que etapa estão as folgas, férias e demais pedidos da unidade.', icone: ListChecks, somenteUnidade: true },
-  { path: '/pedidos',         titulo: 'Pedidos',                descricao: 'Férias / LP, Folgas / Abonos e HE / BH.', icone: Inbox, somenteCentral: true },
+  { path: '/pedidos',         titulo: 'Pedidos',                descricao: 'Férias / LP, Folgas / Abonos, HE / BH e Requisições gerais.', icone: Inbox, somenteCentral: true },
   { path: '/ponto-ausencias', titulo: 'Ponto / Ausências',      descricao: 'Ocorrências de ponto, atestados e declarações.', icone: Fingerprint, somenteCentral: true },
   { path: '/avaliacoes',      titulo: 'Avaliações',             descricao: 'Avaliações de desempenho.', icone: ClipboardCheck, somenteCentral: true },
   { path: '/envios-rh',       titulo: 'Envios RH',              descricao: 'Tudo o que está pronto para o RH (pedidos, ponto e avaliações) num Aviso só.', icone: Send, somenteCentral: true },
