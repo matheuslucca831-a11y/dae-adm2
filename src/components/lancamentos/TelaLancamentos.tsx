@@ -9,7 +9,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { competenciaAtual, dataBR, fimDoMes, hojeISO, mensagemErro, normalizar } from '@/lib/formato';
 import {
-  CAMPOS_TABELA, CATEGORIAS, DESTINOS_RH, SITUACOES_ANDAMENTO, TIPO_PROMOCAO, detalhe, podeEditar, primeiro, resumoHorarios, textoDecisao, textoRodada,
+  CAMPOS_TABELA, CATEGORIAS, DESTINOS_RH, SITUACOES_ANDAMENTO, TIPO_PROMOCAO, detalhe, podeEditar, primeiro, resumoHorarios, textoDecisao, textoEnvio1Doc, textoRodada,
   type Categoria, type Decisao, type Lancamento,
 } from '@/lib/lancamentos';
 import type { Perfil } from '@/lib/types';
@@ -348,7 +348,7 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
     if (l.diretora !== 'Aguardando' && !enviado && !aviso) {
       itens.push({ rotulo: assinado(l) ? 'Desfazer assinatura' : 'Desfazer decisão', icone: Undo2, onClick: () => desfazerDecisao(l) });
     }
-    if (!enviado && !aviso) itens.push({ rotulo: 'Excluir', icone: Trash2, perigo: true, onClick: () => excluir(l) });
+    if ((!enviado || l.enviado_1doc) && !aviso) itens.push({ rotulo: 'Excluir', icone: Trash2, perigo: true, onClick: () => excluir(l) });
 
     return (
       <div className="flex items-center justify-end gap-1">
@@ -723,6 +723,7 @@ function situacao(l: Lancamento): { selo: string; linhas: string[] } {
       linhas: [assinatura, ultimo && !assinado(l) ? `${ultimo.evento} em ${dataBR(ultimo.em)}` : ''].filter(Boolean),
     };
   }
+  if (l.enviado_1doc) return { selo: 'Enviado ao RH', linhas: [textoEnvio1Doc(l), l.destino_rh ?? ''].filter(Boolean) };
   if (enviado) return { selo: 'Enviado ao RH', linhas: [envio] };
   if (assinado(l)) return { selo: 'Pronto para o RH', linhas: [`Assinado ${quem}`, l.destino_rh ? '' : 'falta escolher o RH'].filter(Boolean) };
   return { selo: 'Aguardando assinatura', linhas: [] };

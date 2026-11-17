@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { dataBR, mensagemErro } from '@/lib/formato';
-import { CAMPOS_LANCAMENTO, CATEGORIAS, detalhe, textoAndamento, textoDecisao, type Categoria, type Lancamento } from '@/lib/lancamentos';
+import { CAMPOS_LANCAMENTO, CATEGORIAS, detalhe, textoAndamento, decisaoDe, type Categoria, type Lancamento } from '@/lib/lancamentos';
 import { Aviso, campoCls } from '@/components/ui';
 import { buscarTudo } from '@/lib/buscarTudo';
 import { FiltroPeriodo, FolhaRelatorio, Grupo, mesAtual, tabRel, tdRel, textoPeriodo, thRel } from './FolhaRelatorio';
@@ -92,7 +92,7 @@ export default function RelPedidos({ unidades }: { unidades: { id: string; nome:
                     <td className={tdRel}>{l.tipo}{l.motivo_ocorrencia && <span className="block text-[10px] text-black/60">{l.motivo_ocorrencia}</span>}</td>
                     <td className={tdRel}>{detalhe(l)}</td>
                     <td className={tdRel}>
-                      {textoDecisao(l.diretora)}
+                      {decisaoDe(l)}
                       {l.diretor_nome && <span className="block text-[10px] text-black/60">{l.diretor_nome}{l.data_assinatura && `, ${dataBR(l.data_assinatura)}`}</span>}
                     </td>
                     <td className={tdRel}>{textoAndamento(l)}</td>

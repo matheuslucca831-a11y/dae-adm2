@@ -52,6 +52,9 @@ export default function FormLancamento({
     referencia: l?.referencia ?? '',
     quantidade: l?.quantidade ?? '',
     obs: l?.obs ?? '',
+    // a unidade já mandou ao RH pelo 1Doc: a DAE só registra
+    via_1doc: l?.enviado_1doc ?? false,
+    numero_1doc: l?.numero_1doc ?? '',
     // Ocorrência de ponto
     motivo_ocorrencia: l?.motivo_ocorrencia ?? '',
     testemunha: l?.testemunha ?? '',
@@ -177,8 +180,22 @@ export default function FormLancamento({
     if (modo === 'cartao' && !f.mes_ref) return setErro('Informe o mês de referência do cartão.');
     if (tem('periodo') && !cfg.periodoOpcional && (!f.data_inicio || !(Number(f.qtd_dias) > 0))) return setErro('Informe a data de saída e a quantidade de dias.');
     if (f.data_retorno && f.data_inicio && f.data_retorno < f.data_inicio) return setErro('O retorno não pode ser antes da saída.');
+    const ref = modo === 'cartao' ? `${f.mes_ref.slice(5, 7)}/${f.mes_ref.slice(0, 4)}` : '';
     setErro(null);
     setSalvando(true);
+
+    // Cartão do mesmo mês já lançado: pode ser reenvio (o RH devolveu e o funcionário mandou outro)
+    if (modo === 'cartao' && (!l || l.referencia !== ref)) {
+      const { data: ja } = await supabase.from('lancamentos').select('protocolo_dae, situacao_rh')
+        .eq('funcionario_id', f.funcionario_id).eq('tipo', TIPO_CARTAO).eq('referencia', ref)
+        .neq('diretora', 'Não autorizado').neq('id', l?.id ?? '00000000-0000-0000-0000-000000000000');
+      if (ja && ja.length > 0 && !window.confirm(
+        `Já existe cartão de ponto de ${ref} para este funcionário (${ja.map((x) => `${x.protocolo_dae}: ${x.situacao_rh}`).join('; ')}).\n\n` +
+        'Lançar de novo? Use quando o RH devolveu e o funcionário mandou outro cartão.')) {
+        setSalvando(false);
+        return;
+      }
+    }
 
     const v = (s: string) => s.trim() || null;
     const dados = {
@@ -200,6 +217,7 @@ export default function FormLancamento({
       ...(modo === 'ocorrencia' ? { data_retorno: null, referencia: null } : {}),
       ...(modo === 'cartao' ? { referencia: `${f.mes_ref.slice(5, 7)}/${f.mes_ref.slice(0, 4)}`, data_inicio: null, qtd_dias: null, data_retorno: null } : {}),
       ...(central ? { unidade_id: f.unidade_id || null } : {}),
+      ...(central && cat !== 'avaliacoes' ? { enviado_1doc: f.via_1doc, numero_1doc: f.via_1doc ? v(f.numero_1doc) : null } : {}),
       ...(cat === 'avaliacoes' && !l ? { avaliacao_chegou_de: f.chegou_de } : {}),
       // Pedido devolvido e corrigido volta para a Diretoria
       ...(central && l?.diretora === 'Devolvido' ? { diretora: 'Aguardando' } : {}),
@@ -210,10 +228,7 @@ export default function FormLancamento({
       : supabase.from('lancamentos').insert(dados);
     const { data, error } = await q.select(CAMPOS_LANCAMENTO).single();
     setSalvando(false);
-    if (error) {
-      return setErro(error.code === '23505' && modo === 'cartao'
-        ? 'Já existe cartão de ponto deste funcionário para este mês.' : mensagemErro(error));
-    }
+    if (error) return setErro(mensagemErro(error));
     onSalvo(data as unknown as Lancamento);
   }
 
@@ -431,6 +446,26 @@ export default function FormLancamento({
               : modo === 'cartao' ? 'Justificativas do mês' : 'Observação'}>
             <textarea rows={modo === 'padrao' ? 2 : 3} value={f.obs} onChange={(e) => set('obs', e.target.value)} className={inputCls} />
           </Campo>
+
+          {central && cat !== 'avaliacoes' && (!l || l.enviado_1doc || l.diretora === 'Aguardando') && (
+            <div className="rounded-md border border-linha bg-papel/60 p-3 sm:col-span-2">
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" checked={f.via_1doc} onChange={(e) => set('via_1doc', e.target.checked)}
+                  className="mt-0.5 size-4 accent-[var(--acento)]" />
+                <span>
+                  <strong>A unidade já enviou ao RH pelo 1Doc</strong> (só registrar)
+                  <span className="block text-xs text-tinta-suave">
+                    Fica no histórico, na busca e nos relatórios como &quot;Enviado ao RH pela unidade&quot;. Não vai para a assinatura nem para o Aviso.
+                  </span>
+                </span>
+              </label>
+              {f.via_1doc && (
+                <Campo rotulo="Nº do 1Doc (opcional)" className="mt-2 max-w-60">
+                  <input value={f.numero_1doc} onChange={(e) => set('numero_1doc', e.target.value)} placeholder="ex.: 12.345/2026" className={inputCls} />
+                </Campo>
+              )}
+            </div>
+          )}
         </div>
 
         <footer className="border-t border-linha px-5 py-4">

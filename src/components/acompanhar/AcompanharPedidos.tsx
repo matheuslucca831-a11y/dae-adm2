@@ -5,7 +5,7 @@ import { Building2, Check, FileSignature, Inbox, Search, Send, Undo2, X } from '
 import { createClient } from '@/lib/supabase/client';
 import { dataBR, mensagemErro, normalizar } from '@/lib/formato';
 import {
-  CAMPOS_LANCAMENTO, CATEGORIAS, SITUACOES_ANDAMENTO, SITUACOES_CONCLUIDO, detalhe, linhaDoTempo, type Categoria, type Lancamento,
+  CAMPOS_LANCAMENTO, CATEGORIAS, SITUACOES_ANDAMENTO, SITUACOES_CONCLUIDO, detalhe, linhaDoTempo, textoEnvio1Doc, type Categoria, type Lancamento,
 } from '@/lib/lancamentos';
 import { Aviso, inputCls } from '@/components/ui';
 import { buscarTudo } from '@/lib/buscarTudo';
@@ -44,6 +44,7 @@ function frase(l: Lancamento) {
       ? `${rodada}A unidade devolveu em ${dataBR(l.avaliacao_devolvida_em)}. Aguardando a assinatura da Diretoria.`
       : `${rodada}Na DAE desde ${dataBR(l.data_recebimento)}. A DAE vai encaminhar para a unidade ou para a assinatura.`;
   }
+  if (l.enviado_1doc) return `Enviado ao RH ${textoEnvio1Doc(l)}. Registrado na DAE em ${dataBR(l.data_recebimento)}.`;
   switch (l.situacao_rh) {
     case 'Aguardando autorização': return `Recebido na DAE em ${dataBR(l.data_recebimento)}. Aguardando a assinatura da Diretoria.`;
     case 'Autorizado / Aguardando envio':

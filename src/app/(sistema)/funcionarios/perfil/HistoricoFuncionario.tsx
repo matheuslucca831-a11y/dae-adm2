@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { dataBR, mensagemErro } from '@/lib/formato';
-import { CAMPOS_TABELA, CATEGORIAS, detalhe, primeiro, textoDecisao, type Lancamento } from '@/lib/lancamentos';
+import { CAMPOS_TABELA, CATEGORIAS, detalhe, primeiro, decisaoDe, type Lancamento } from '@/lib/lancamentos';
 import { Aviso, Selo } from '@/components/ui';
 import Etapas from '@/components/lancamentos/Etapas';
 import { Paginacao, usePaginacao } from '@/components/Paginacao';
@@ -94,7 +94,7 @@ function CartaoPedido({ l }: { l: Lancamento }) {
       {detalhe(l) && <p className="mt-1 text-sm">{detalhe(l)}</p>}
       <div className="mt-2 flex flex-wrap items-start gap-x-6 gap-y-2 text-xs">
         <div>
-          <Selo texto={textoDecisao(l.diretora)} />
+          <Selo texto={decisaoDe(l)} />
           {l.diretor_nome && <span className="ml-1">por {l.diretor_nome}{l.data_assinatura && ` em ${dataBR(l.data_assinatura)}`}</span>}
           {l.diretora_obs && <span className="block text-tinta-suave">{l.diretora_obs}</span>}
         </div>

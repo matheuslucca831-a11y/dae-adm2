@@ -87,6 +87,9 @@ export type Lancamento = {
   segundo_vinculo: boolean;
   /** matrícula do vínculo do pedido */
   matricula: string | null;
+  /** a unidade mandou direto ao RH pelo 1Doc; a DAE só registrou */
+  enviado_1doc: boolean;
+  numero_1doc: string | null;
   // O Supabase pode devolver lista ou objeto (relação 1 para 1); use primeiro()
   comunicados_1doc?: Um1Doc | Um1Doc[] | null;
   aviso_rh_itens?: ItemAviso | ItemAviso[] | null;
@@ -98,14 +101,18 @@ export const CAMPOS_LANCAMENTO =
   'motivo_ocorrencia, testemunha, horario_entrada, horario_saida_almoco, horario_retorno_almoco, horario_saida, ' +
   'diretora, diretora_obs, diretora_em, diretor_id, diretor_nome, data_assinatura, situacao_rh, destino_rh, enviado_rh_em, baixa_em, ' +
   'avaliacao_etapa, avaliacao_unidade_em, avaliacao_devolvida_em, avaliacao_rodada, avaliacao_chegou_de, avaliacao_anterior, avaliacao_trilha, ' +
-  'segundo_vinculo, matricula';
+  'segundo_vinculo, matricula, enviado_1doc, numero_1doc';
 
 /** Para a tabela: inclui 1Doc e Aviso RH */
 export const CAMPOS_TABELA =
   CAMPOS_LANCAMENTO + ', comunicados_1doc(id, situacao), aviso_rh_itens(aviso:avisos_rh(id, numero))';
 
 /** Pode editar enquanto não foi assinado (ou foi devolvido) */
-export const podeEditar = (l: Lancamento) => l.diretora === 'Aguardando' || l.diretora === 'Devolvido';
+export const podeEditar = (l: Lancamento) =>
+  l.diretora === 'Aguardando' || l.diretora === 'Devolvido' || (l.enviado_1doc && l.situacao_rh !== 'Concluído');
+
+/** Texto do envio pelo 1Doc da unidade ("pela unidade, no 1Doc nº 123") */
+export const textoEnvio1Doc = (l: Lancamento) => `pela unidade, no 1Doc${l.numero_1doc ? ` nº ${l.numero_1doc}` : ''}`;
 
 export const DESTINOS_RH = ['RH SESAU', 'RH FSPSS'];
 export const DESTINOS_1DOC = ['Central de Regulação', 'Unidades onde atende', 'Outro'];
@@ -144,8 +151,8 @@ export function linhaDoTempo(l: Lancamento): { passos: Passo[]; atual: number; p
     atual = ENVIADO.includes(l.situacao_rh) ? 3 : assinada ? 2 : l.avaliacao_etapa === 'Na unidade' || l.avaliacao_devolvida_em ? 1 : 0;
   } else {
     passos = [
-      { titulo: 'Na DAE', data: l.data_recebimento },
-      { titulo: 'Assinado', data: assinatura },
+      { titulo: l.enviado_1doc ? 'Registrado na DAE' : 'Na DAE', data: l.data_recebimento },
+      { titulo: l.enviado_1doc ? 'Pela unidade (1Doc)' : 'Assinado', data: l.enviado_1doc ? null : assinatura },
       { titulo: rh, data: l.enviado_rh_em },
     ];
     atual = ENVIADO.includes(l.situacao_rh) ? 2 : l.situacao_rh === 'Autorizado / Aguardando envio' ? 1 : 0;
@@ -198,6 +205,8 @@ export function textoAndamento(l: Pick<Lancamento, 'situacao_rh' | 'destino_rh'>
 
 /** Como mostrar a decisão da Diretoria */
 export const textoDecisao = (d: string) => (d === 'Dispensado' ? 'Sem assinatura' : d);
+/** Decisão para relatórios: o que foi pelo 1Doc da unidade não passou pela Diretoria na DAE */
+export const decisaoDe = (l: Lancamento) => (l.enviado_1doc ? 'Pela unidade (1Doc)' : textoDecisao(l.diretora));
 
 /** "2ª avaliação" (vazio na 1ª) */
 export const textoRodada = (l: Pick<Lancamento, 'avaliacao_rodada'>) => (l.avaliacao_rodada > 1 ? `${l.avaliacao_rodada}ª avaliação` : '');
