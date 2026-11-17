@@ -415,11 +415,12 @@ export default function FormFuncionario({
 
         <footer className="border-t border-linha bg-white px-6 py-4">
           {erro && <div className="mb-3"><Aviso>{erro}</Aviso></div>}
-          <div className="flex justify-end gap-2">
-            <Botao variante="discreto" onClick={onFechar}>Cancelar</Botao>
+          {/* botões à esquerda: o canto inferior direito fica livre (selo do Netlify, avisos) */}
+          <div className="flex gap-2">
             <Botao type="submit" carregando={salvando} disabled={carregando}>
               {editando ? 'Salvar alterações' : 'Cadastrar funcionário'}
             </Botao>
+            <Botao variante="discreto" onClick={onFechar}>Cancelar</Botao>
           </div>
         </footer>
       </form>
