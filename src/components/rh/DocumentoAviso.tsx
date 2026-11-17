@@ -47,7 +47,8 @@ export default function DocumentoAviso({ avisoId, onVoltar }: { avisoId: string;
         : it.lancamento;
       (g[secaoDocumento(l)] ??= []).push(l);
     }
-    Object.values(g).forEach((ls) => ls.sort((a, b) => a.funcionario_nome.localeCompare(b.funcionario_nome, 'pt-BR')));
+    // dentro de cada tipo, na ordem do protocolo (ex.: 2026-0012 antes de 2026-0105)
+    Object.values(g).forEach((ls) => ls.sort((a, b) => a.protocolo_dae.localeCompare(b.protocolo_dae, 'pt-BR', { numeric: true })));
     return g;
   }, [aviso]);
 
@@ -120,6 +121,7 @@ export default function DocumentoAviso({ avisoId, onVoltar }: { avisoId: string;
                 <table className="w-full border-collapse text-[11.5px]">
                   <thead>
                     <tr className="bg-black/5">
+                      <th className="w-24 border border-black/40 px-2 py-1 text-left font-semibold">Protocolo</th>
                       {s.colunas.map((c) => <th key={c} className="border border-black/40 px-2 py-1 text-left font-semibold">{c}</th>)}
                     </tr>
                   </thead>
@@ -128,6 +130,7 @@ export default function DocumentoAviso({ avisoId, onVoltar }: { avisoId: string;
                       const cs = celulas(s.id, l);
                       return (
                         <tr key={l.id}>
+                          <td className="whitespace-nowrap border border-black/40 px-2 py-1 align-top">{l.protocolo_dae}</td>
                           {s.colunas.map((c, i) => <td key={c} className="border border-black/40 px-2 py-1 align-top">{cs[i] || '—'}</td>)}
                         </tr>
                       );
