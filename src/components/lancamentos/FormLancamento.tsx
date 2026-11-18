@@ -251,11 +251,12 @@ export default function FormLancamento({
         <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
           {!l && opcoesCategoria.length > 1 && (
             <Campo rotulo="Pedido de *" className="sm:col-span-2">
-              <div role="radiogroup" className="grid grid-cols-3 gap-1 rounded-md border border-linha bg-papel p-1">
+              <div role="radiogroup"
+                className={`grid gap-1 rounded-md border border-linha bg-papel p-1 ${opcoesCategoria.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : opcoesCategoria.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                 {opcoesCategoria.map((c) => (
                   <button key={c} type="button" role="radio" aria-checked={cat === c}
                     onClick={() => { setCat(c); setF((x) => ({ ...x, tipo: CATEGORIAS[c].tipos[0] })); }}
-                    className={`rounded px-2 py-1.5 text-sm font-semibold ${cat === c ? 'bg-acento text-white' : 'text-tinta-suave hover:text-tinta'}`}>
+                    className={`flex items-center justify-center rounded px-2 py-1.5 text-center text-sm font-semibold leading-tight ${cat === c ? 'bg-acento text-white' : 'text-tinta-suave hover:text-tinta'}`}>
                     {CATEGORIAS[c].titulo}
                   </button>
                 ))}
