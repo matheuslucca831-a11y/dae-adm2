@@ -7,6 +7,7 @@ import { mensagemErro } from '@/lib/formato';
 import { DESTINOS_RH } from '@/lib/lancamentos';
 import { buscarTudo } from '@/lib/buscarTudo';
 import { Aviso, Botao, TabelaWrap, campoCls, tdCls, thCls } from '@/components/ui';
+import { Selecao } from '@/components/CampoBusca';
 
 /** Usados nas regras de ponto (Ocorrência = FSPSS, Cartão = Estatutário): não renomear nem excluir */
 const PROTEGIDOS = ['FSPSS', 'Estatutário'];
@@ -95,10 +96,10 @@ export default function AdminVinculos() {
                     </td>
                     <td className={tdCls}>{v.funcionarios}</td>
                     <td className={tdCls}>
-                      <select value={v.destino ?? ''} onChange={(e) => mudarDestino(v, e.target.value)} aria-label={`Destino de ${v.nome}`} className={campoCls}>
+                      <Selecao value={v.destino ?? ''} onChange={(e) => mudarDestino(v, e.target.value)} aria-label={`Destino de ${v.nome}`} className={campoCls}>
                         <option value="">Sem destino (escolher em cada pedido)</option>
                         {DESTINOS_RH.map((d) => <option key={d}>{d}</option>)}
-                      </select>
+                      </Selecao>
                     </td>
                     <td className={`${tdCls} whitespace-nowrap text-right`}>
                       {protegido ? <span className="text-xs text-tinta-suave">usado nas regras de ponto</span>

@@ -10,6 +10,7 @@ import { CAMPOS_TABELA, CATEGORIAS, DESTINOS_RH, detalhe, primeiro, type Categor
 import { buscarTudo } from '@/lib/buscarTudo';
 import { Paginacao, usePaginacao } from '@/components/Paginacao';
 import { Aviso, Botao, TabelaWrap, campoCls, inputCls, tdCls, thCls } from '@/components/ui';
+import { Selecao } from '@/components/CampoBusca';
 
 const SEM_DESTINO = 'Sem destino';
 
@@ -151,19 +152,19 @@ export default function EnviosRH() {
             <input value={fil.busca} onChange={(e) => setFil({ ...fil, busca: e.target.value })}
               placeholder="Buscar funcionário, protocolo, nº do Aviso…" aria-label="Buscar" className={`${inputCls} pl-9`} />
           </div>
-          <select value={fil.categoria} onChange={(e) => setFil({ ...fil, categoria: e.target.value as Filtros['categoria'] })}
+          <Selecao value={fil.categoria} onChange={(e) => setFil({ ...fil, categoria: e.target.value as Filtros['categoria'] })}
             aria-label="Tipo" className={campoCls}>
             <option value="">Todos os tipos</option>
             {categorias.map((c) => <option key={c} value={c}>{CATEGORIAS[c].titulo}</option>)}
-          </select>
-          <select value={fil.unidade} onChange={(e) => setFil({ ...fil, unidade: e.target.value })} aria-label="Unidade" className={campoCls}>
+          </Selecao>
+          <Selecao value={fil.unidade} onChange={(e) => setFil({ ...fil, unidade: e.target.value })} aria-label="Unidade" className={campoCls}>
             <option value="">Todas as unidades</option>
             {unidades.map((u) => <option key={u}>{u}</option>)}
-          </select>
-          <select value={fil.rh} onChange={(e) => setFil({ ...fil, rh: e.target.value })} aria-label="RH" className={campoCls}>
+          </Selecao>
+          <Selecao value={fil.rh} onChange={(e) => setFil({ ...fil, rh: e.target.value })} aria-label="RH" className={campoCls}>
             <option value="">Todos os RH</option>
             {[...DESTINOS_RH, SEM_DESTINO].map((d) => <option key={d}>{d}</option>)}
-          </select>
+          </Selecao>
           {temFiltro && <Botao variante="discreto" onClick={() => setFil({ ...FILTROS_INICIAIS, situacao: fil.situacao })}>Limpar</Botao>}
         </div>
       )}
@@ -269,11 +270,11 @@ function GrupoRH({ destino, itens, selecionados, ocupado, onAlternar, onGerar, o
                   </td>
                   {semDestino && (
                     <td className={tdCls}>
-                      <select defaultValue="" disabled={ocupado === l.id} onChange={(e) => e.target.value && onDestino(l, e.target.value)}
+                      <Selecao defaultValue="" disabled={ocupado === l.id} onChange={(e) => e.target.value && onDestino(l, e.target.value)}
                         aria-label="Enviar para" className={campoCls}>
                         <option value="">Escolher…</option>
                         {DESTINOS_RH.map((d) => <option key={d}>{d}</option>)}
-                      </select>
+                      </Selecao>
                     </td>
                   )}
                 </tr>

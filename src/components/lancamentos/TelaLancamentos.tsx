@@ -19,6 +19,7 @@ import { Paginacao, usePaginacao } from '@/components/Paginacao';
 import { Aviso, Botao, Selo, TabelaWrap, campoCls, inputCls, tdCls, thCls } from '@/components/ui';
 import FormLancamento from './FormLancamento';
 import Painel1Doc from './Painel1Doc';
+import { Selecao } from '@/components/CampoBusca';
 
 /** Filas de trabalho da DAE e visões da unidade */
 type Modo = 'dae' | 'unidade' | 'assinatura' | 'enviar' | 'umdoc' | 'andamento' | 'periodo';
@@ -350,11 +351,11 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
           <Send className="size-3.5" aria-hidden /> Enviar ao RH
         </Botao>
       ) : (
-        <select defaultValue="" aria-label="Para qual RH" className={`${campoCls} py-1 text-xs`}
+        <Selecao defaultValue="" aria-label="Para qual RH" className={`${campoCls} py-1 text-xs`}
           onChange={(e) => e.target.value && atualizar(l, { destino_rh: e.target.value })}>
           <option value="">Escolher o RH…</option>
           {DESTINOS_RH.map((d) => <option key={d}>{d}</option>)}
-        </select>
+        </Selecao>
       );
     }
 
@@ -385,10 +386,10 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
     ) : (
       <label className="text-xs font-semibold text-tinta-suave">
         Quem assinou *
-        <select value={valor} onChange={(e) => onChange(e.target.value)} className={`${campoCls} mt-1 block min-w-56 text-tinta`}>
+        <Selecao value={valor} onChange={(e) => onChange(e.target.value)} className={`${campoCls} mt-1 block min-w-56 text-tinta`}>
           <option value="">Selecione</option>
           {diretores.map((d) => <option key={d.id} value={d.id}>{d.nome}{d.cargo ? ` (${d.cargo})` : ''}</option>)}
-        </select>
+        </Selecao>
       </label>
     ));
     const campoData = (valor: string, onChange: (v: string) => void) => (
@@ -558,10 +559,10 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
         <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-linha bg-white p-3 text-sm">
           {modo === 'periodo' && (
             <>
-              <select value={periodo.campo} onChange={(e) => mudarPeriodo({ campo: e.target.value })} aria-label="Data usada" className={campoCls}>
+              <Selecao value={periodo.campo} onChange={(e) => mudarPeriodo({ campo: e.target.value })} aria-label="Data usada" className={campoCls}>
                 {tem('periodo') && <option value="data_inicio">{unica?.periodoOpcional ? 'Data da ocorrência' : 'Data de saída'}</option>}
                 <option value="data_recebimento">Data de recebimento</option>
-              </select>
+              </Selecao>
               <span>de</span>
               <input type="date" value={periodo.de} onChange={(e) => mudarPeriodo({ de: e.target.value })} aria-label="De" className={campoCls} />
               <span>até</span>
@@ -573,23 +574,23 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
           {maisFiltros && (
             <>
               {central && (
-                <select value={fil.unidade} onChange={(e) => setFil({ ...fil, unidade: e.target.value })} aria-label="Unidade" className={campoCls}>
+                <Selecao value={fil.unidade} onChange={(e) => setFil({ ...fil, unidade: e.target.value })} aria-label="Unidade" className={campoCls}>
                   <option value="">Todas as unidades</option>
                   {opcoesUnidade.map((u) => <option key={u}>{u}</option>)}
-                </select>
+                </Selecao>
               )}
-              <select value={fil.vinculo} onChange={(e) => setFil({ ...fil, vinculo: e.target.value })} aria-label="Vínculo" className={campoCls}>
+              <Selecao value={fil.vinculo} onChange={(e) => setFil({ ...fil, vinculo: e.target.value })} aria-label="Vínculo" className={campoCls}>
                 <option value="">Todos os vínculos</option>
                 {opcoesVinculo.map((v) => <option key={v}>{v}</option>)}
-              </select>
-              <select value={fil.tipo} onChange={(e) => setFil({ ...fil, tipo: e.target.value })} aria-label="Tipo" className={campoCls}>
+              </Selecao>
+              <Selecao value={fil.tipo} onChange={(e) => setFil({ ...fil, tipo: e.target.value })} aria-label="Tipo" className={campoCls}>
                 <option value="">Todos os tipos</option>
                 {tipos.map((t) => <option key={t}>{t}</option>)}
-              </select>
-              <select value={fil.cargo} onChange={(e) => setFil({ ...fil, cargo: e.target.value })} aria-label="Cargo" className={campoCls}>
+              </Selecao>
+              <Selecao value={fil.cargo} onChange={(e) => setFil({ ...fil, cargo: e.target.value })} aria-label="Cargo" className={campoCls}>
                 <option value="">Todos os cargos</option>
                 {opcoesCargo.map((c) => <option key={c}>{c}</option>)}
-              </select>
+              </Selecao>
               {temFiltro && <Botao variante="discreto" onClick={() => setFil(filtrosVazios)}>Limpar</Botao>}
             </>
           )}

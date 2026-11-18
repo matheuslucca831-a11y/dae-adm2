@@ -9,6 +9,7 @@ import { conflitosDoHorario, textoConflito, todosConflitos, type LotacaoBase } f
 import { Aviso, Botao, Campo, campoCls, inputCls, tdCls, thCls } from '@/components/ui';
 import type { UnidadeOpcao } from '../FormFuncionario';
 import AtalhosHorario, { type LinhaRapida } from '@/components/AtalhosHorario';
+import { Selecao } from '@/components/CampoBusca';
 
 type Horario = { id: string; dia_semana: string | null; frequencia: string; entrada: string | null; saida: string | null; data_referencia: string | null; obs: string | null };
 type Lotacao = {
@@ -163,9 +164,9 @@ export default function LotacoesEscalas({ funcionarioId, unidades }: { funcionar
                   <input type="date" value={enc.data} onChange={(e) => setEnc({ ...enc, data: e.target.value })} className={inputCls} />
                 </Campo>
                 <Campo rotulo="Motivo">
-                  <select value={enc.motivo} onChange={(e) => setEnc({ ...enc, motivo: e.target.value })} className={inputCls}>
+                  <Selecao value={enc.motivo} onChange={(e) => setEnc({ ...enc, motivo: e.target.value })} className={inputCls}>
                     {MOTIVOS_ENCERRAMENTO.map((m) => <option key={m}>{m}</option>)}
-                  </select>
+                  </Selecao>
                 </Campo>
                 <Campo rotulo="Justificativa *">
                   <input value={enc.justificativa} autoFocus onChange={(e) => setEnc({ ...enc, justificativa: e.target.value })} className={inputCls} />
@@ -212,17 +213,17 @@ export default function LotacoesEscalas({ funcionarioId, unidades }: { funcionar
                   {ativa && (
                     <tr className="bg-papel/50">
                       <td className={tdCls}>
-                        <select value={h.frequencia} onChange={(e) => setH({ frequencia: e.target.value })} aria-label="Frequência" className={campoCls}>
+                        <Selecao value={h.frequencia} onChange={(e) => setH({ frequencia: e.target.value })} aria-label="Frequência" className={campoCls}>
                           {FREQUENCIAS.map((fq) => <option key={fq}>{fq}</option>)}
-                        </select>
+                        </Selecao>
                       </td>
                       <td className={tdCls}>
                         {h.frequencia === 'Datas específicas' ? (
                           <input type="date" value={h.data_referencia} onChange={(e) => setH({ data_referencia: e.target.value })} aria-label="Data" className={campoCls} />
                         ) : (
-                          <select value={h.dia_semana} onChange={(e) => setH({ dia_semana: e.target.value })} aria-label="Dia" className={campoCls}>
+                          <Selecao value={h.dia_semana} onChange={(e) => setH({ dia_semana: e.target.value })} aria-label="Dia" className={campoCls}>
                             {DIAS_SEMANA.map((d) => <option key={d}>{d}</option>)}
-                          </select>
+                          </Selecao>
                         )}
                       </td>
                       <td className={tdCls}><input type="time" value={h.entrada} onChange={(e) => setH({ entrada: e.target.value })} aria-label="Entrada" className={campoCls} /></td>
@@ -250,10 +251,10 @@ export default function LotacoesEscalas({ funcionarioId, unidades }: { funcionar
         <h3 className="text-sm font-bold">Nova lotação</h3>
         <div className="mt-2 grid gap-3 sm:grid-cols-[1fr_8rem_10rem_auto] sm:items-end">
           <Campo rotulo="Unidade">
-            <select value={nova.unidade_id} onChange={(e) => setNova({ ...nova, unidade_id: e.target.value })} className={inputCls}>
+            <Selecao value={nova.unidade_id} onChange={(e) => setNova({ ...nova, unidade_id: e.target.value })} className={inputCls}>
               <option value="">Selecione</option>
               {unidades.filter((u) => !ativas.has(u.id)).map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-            </select>
+            </Selecao>
           </Campo>
           <Campo rotulo="CH semanal">
             <input type="number" min={0} value={nova.carga_horaria} onChange={(e) => setNova({ ...nova, carga_horaria: e.target.value })} className={inputCls} />

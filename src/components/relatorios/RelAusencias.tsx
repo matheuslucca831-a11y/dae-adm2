@@ -11,6 +11,7 @@ import { normalizar } from '@/lib/formato';
 type Ausencia = Lancamento & { funcionario: { cargo: string | null } | null };
 const cargoDe = (l: Ausencia) => l.funcionario?.cargo?.trim() || 'Sem cargo';
 import { FiltroPeriodo, FolhaRelatorio, Grupo, mesAtual, tabRel, tdRel, textoPeriodo, thRel } from './FolhaRelatorio';
+import { Selecao } from '@/components/CampoBusca';
 
 /** Quem está fora no período: férias, folgas, abonos, atestados… */
 export default function RelAusencias({ unidades }: { unidades: { id: string; nome: string }[] }) {
@@ -69,14 +70,14 @@ export default function RelAusencias({ unidades }: { unidades: { id: string; nom
     <>
       <div className="flex flex-wrap items-center gap-3 print:hidden">
         <FiltroPeriodo valor={periodo} onChange={(p) => { setLista(null); setPeriodo(p); }} />
-        <select value={fUnidade} onChange={(e) => { setLista(null); setFUnidade(e.target.value); }} aria-label="Unidade" className={campoCls}>
+        <Selecao value={fUnidade} onChange={(e) => { setLista(null); setFUnidade(e.target.value); }} aria-label="Unidade" className={campoCls}>
           <option value="">Todas as unidades</option>
           {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-        </select>
-        <select value={fCargo} onChange={(e) => setFCargo(e.target.value)} aria-label="Cargo" className={campoCls}>
+        </Selecao>
+        <Selecao value={fCargo} onChange={(e) => setFCargo(e.target.value)} aria-label="Cargo" className={campoCls}>
           <option value="">Todos os cargos</option>
           {cargos.map((c) => <option key={c}>{c}</option>)}
-        </select>
+        </Selecao>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={soAssinados} onChange={(e) => { setLista(null); setSoAssinados(e.target.checked); }} className="size-4 accent-[var(--acento)]" />
           Só assinados

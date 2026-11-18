@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Selecao } from '@/components/CampoBusca';
 
 const TAMANHOS = [25, 50, 100];
 
@@ -47,10 +48,10 @@ export function Paginacao({ p, rotulo = 'registros' }: { p: Pag; rotulo?: string
       <div className="flex items-center gap-2">
         <label className="flex items-center gap-1.5 text-tinta-suave">
           Por página
-          <select value={p.porPagina} onChange={(e) => p.mudarTamanho(Number(e.target.value))}
+          <Selecao value={p.porPagina} onChange={(e) => p.mudarTamanho(Number(e.target.value))}
             className="rounded-md border border-linha bg-white px-2 py-1 text-sm text-tinta">
             {TAMANHOS.map((n) => <option key={n}>{n}</option>)}
-          </select>
+          </Selecao>
         </label>
         <button type="button" className={btn} disabled={p.pagina <= 1} onClick={() => p.irPara(p.pagina - 1)} aria-label="Página anterior">
           <ChevronLeft className="size-4" />

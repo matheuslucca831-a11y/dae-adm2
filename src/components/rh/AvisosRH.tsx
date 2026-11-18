@@ -9,6 +9,7 @@ import { dataBR, dataHoraBR, hojeISO, mensagemErro } from '@/lib/formato';
 import { Aviso, Botao, Selo, TabelaWrap, campoCls, tdCls, thCls } from '@/components/ui';
 import DocumentoAviso from './DocumentoAviso';
 import { Paginacao, usePaginacao } from '@/components/Paginacao';
+import { Selecao } from '@/components/CampoBusca';
 
 type Linha = {
   id: string; numero: string; destino: string; data: string; situacao: 'Pendente' | 'Enviado';
@@ -70,14 +71,14 @@ export default function AvisosRH({ avisoInicial, voltar }: { avisoInicial?: stri
       <p className="mt-1 text-tinta-suave">Documentos de envio ao RH. Abra para imprimir e confirme quando forem entregues.</p>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <select value={ano} onChange={(e) => { setCarregando(true); setAno(e.target.value); }} aria-label="Ano" className={campoCls}>
+        <Selecao value={ano} onChange={(e) => { setCarregando(true); setAno(e.target.value); }} aria-label="Ano" className={campoCls}>
           {anos.map((a) => <option key={a}>{a}</option>)}
-        </select>
-        <select value={situacao} onChange={(e) => { setCarregando(true); setSituacao(e.target.value); }} aria-label="Situação" className={campoCls}>
+        </Selecao>
+        <Selecao value={situacao} onChange={(e) => { setCarregando(true); setSituacao(e.target.value); }} aria-label="Situação" className={campoCls}>
           <option value="">Todas as situações</option>
           <option value="Pendente">Aguardando entrega</option>
           <option value="Enviado">Entregues</option>
-        </select>
+        </Selecao>
         <Botao variante="secundario" className="ml-auto" onClick={() => router.push('/envios-rh')}>Gerar novo aviso</Botao>
       </div>
 

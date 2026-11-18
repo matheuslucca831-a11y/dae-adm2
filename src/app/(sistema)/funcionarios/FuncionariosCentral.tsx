@@ -23,6 +23,7 @@ import FormFuncionario, { type UnidadeOpcao } from './FormFuncionario';
 import RelacoesUnidades from './RelacoesUnidades';
 import SugestoesUnidades from '@/components/sugestoes/SugestoesUnidades';
 import SugestoesHorario from '@/components/sugestoes/SugestoesHorario';
+import { Selecao } from '@/components/CampoBusca';
 
 type Aba = 'cadastro' | 'sugestoes' | 'relacoes';
 
@@ -304,7 +305,7 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
 
         {/* Filtros de Seleção e Busca */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <select
+          <Selecao
             value={fUnidade}
             onChange={(e) => setFUnidade(e.target.value)}
             aria-label="Filtrar por Unidade"
@@ -317,9 +318,9 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
                 {u.nome}
               </option>
             ))}
-          </select>
+          </Selecao>
 
-          <select
+          <Selecao
             value={fVinculo}
             onChange={(e) => setFVinculo(e.target.value)}
             aria-label="Filtrar por Vínculo"
@@ -331,9 +332,9 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
                 {v}
               </option>
             ))}
-          </select>
+          </Selecao>
 
-          <select
+          <Selecao
             value={fCargo}
             onChange={(e) => setFCargo(e.target.value)}
             aria-label="Filtrar por Cargo"
@@ -345,7 +346,7 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
                 {c}
               </option>
             ))}
-          </select>
+          </Selecao>
 
           {/* Alternador de Modo Cards / Tabela */}
           <div className="flex items-center rounded-full border border-linha bg-white p-1">

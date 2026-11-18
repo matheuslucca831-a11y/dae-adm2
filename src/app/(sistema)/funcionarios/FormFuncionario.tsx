@@ -13,6 +13,7 @@ import FichaProfissional, {
 import AtalhosHorario, { SeletorAtalho, juntarLinhas } from '@/components/AtalhosHorario';
 import { DESTINOS_1DOC } from '@/lib/lancamentos';
 import { todosConflitos, type LotacaoBase } from '@/lib/escalas';
+import { Selecao } from '@/components/CampoBusca';
 
 export type UnidadeOpcao = { id: string; nome: string; sigla: string | null; cnes?: string | null };
 
@@ -233,13 +234,13 @@ export default function FormFuncionario({
                   <>
                     <div className="mt-3 grid gap-3 sm:grid-cols-6">
                       <Campo rotulo="Vínculo *" className="sm:col-span-2">
-                        <select value={dados.vinculo_2} onChange={(e) => set('vinculo_2', e.target.value)} className={inputCls}>
+                        <Selecao value={dados.vinculo_2} onChange={(e) => set('vinculo_2', e.target.value)} className={inputCls}>
                           <option value="">Selecione</option>
                           {vinculos.map((v) => <option key={v}>{v}</option>)}
-                        </select>
+                        </Selecao>
                       </Campo>
                       <Campo rotulo="Forma de contratação" className="sm:col-span-2">
-                        <select value={dados.forma_contratacao_2}
+                        <Selecao value={dados.forma_contratacao_2}
                           onChange={(e) => {
                             const forma = e.target.value;
                             const v = VINCULO_DA_FORMA[forma];
@@ -247,7 +248,7 @@ export default function FormFuncionario({
                           }} className={inputCls}>
                           <option value="">Selecione</option>
                           {FORMAS_CONTRATACAO.map((f) => <option key={f}>{f}</option>)}
-                        </select>
+                        </Selecao>
                       </Campo>
                       <Campo rotulo="Matrícula deste vínculo" className="sm:col-span-2">
                         <input value={dados.matricula_2} onChange={(e) => set('matricula_2', e.target.value)} className={inputCls} />
@@ -271,9 +272,9 @@ export default function FormFuncionario({
                   </label>
                   {dados.exige_1doc && (
                     <Campo rotulo="Destino 1Doc" className="sm:col-span-4" dica="Unidades onde atende: avisa todas as unidades em que o funcionário tem lotação ativa.">
-                      <select value={dados.destino_1doc} onChange={(e) => set('destino_1doc', e.target.value)} className={inputCls}>
+                      <Selecao value={dados.destino_1doc} onChange={(e) => set('destino_1doc', e.target.value)} className={inputCls}>
                         {DESTINOS_1DOC.map((d) => <option key={d}>{d}</option>)}
-                      </select>
+                      </Selecao>
                     </Campo>
                   )}
                 </div>
@@ -287,10 +288,10 @@ export default function FormFuncionario({
                   <legend className="px-1 text-sm font-bold">Situação</legend>
                   <div className="grid gap-3 sm:grid-cols-6">
                     <Campo rotulo="Situação" className="sm:col-span-2">
-                      <select value={dados.situacao} onChange={(e) => set('situacao', e.target.value as Dados['situacao'])} className={inputCls}>
+                      <Selecao value={dados.situacao} onChange={(e) => set('situacao', e.target.value as Dados['situacao'])} className={inputCls}>
                         <option>Ativo</option>
                         <option>Inativo</option>
-                      </select>
+                      </Selecao>
                     </Campo>
                     {dados.situacao === 'Inativo' && (
                       <Campo rotulo="Justificativa *" className="sm:col-span-4">
@@ -338,10 +339,10 @@ export default function FormFuncionario({
                       <div className="grid gap-3 sm:grid-cols-6">
                         <Campo rotulo="Unidade *" className="sm:col-span-3"
                           dica={lot.unidade_id ? `CNES: ${unidades.find((u) => u.id === lot.unidade_id)?.cnes || 'não cadastrado (Administração > Unidades)'}` : undefined}>
-                          <select value={lot.unidade_id} onChange={(e) => setLot(lot.chave, { unidade_id: e.target.value })} className={inputCls}>
+                          <Selecao value={lot.unidade_id} onChange={(e) => setLot(lot.chave, { unidade_id: e.target.value })} className={inputCls}>
                             <option value="">Selecione</option>
                             {unidadesLivres(lot.unidade_id).map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-                          </select>
+                          </Selecao>
                         </Campo>
                         <Campo rotulo="CH semanal na unidade" className="sm:col-span-1">
                           <input type="number" min={0} value={lot.carga_horaria} onChange={(e) => setLot(lot.chave, { carga_horaria: e.target.value })} className={inputCls} />
@@ -358,9 +359,9 @@ export default function FormFuncionario({
                         {lot.horarios.map((h) => (
                           <div key={h.chave} className="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_1fr_6rem_6rem_9rem_auto] sm:items-end">
                             <Campo rotulo="Frequência">
-                              <select value={h.frequencia} onChange={(e) => setHor(lot, h.chave, { frequencia: e.target.value })} className={inputCls}>
+                              <Selecao value={h.frequencia} onChange={(e) => setHor(lot, h.chave, { frequencia: e.target.value })} className={inputCls}>
                                 {FREQUENCIAS.map((f) => <option key={f}>{f}</option>)}
-                              </select>
+                              </Selecao>
                             </Campo>
                             {h.frequencia === 'Datas específicas' ? (
                               <Campo rotulo="Data">
@@ -368,9 +369,9 @@ export default function FormFuncionario({
                               </Campo>
                             ) : (
                               <Campo rotulo="Dia">
-                                <select value={h.dia_semana} onChange={(e) => setHor(lot, h.chave, { dia_semana: e.target.value })} className={inputCls}>
+                                <Selecao value={h.dia_semana} onChange={(e) => setHor(lot, h.chave, { dia_semana: e.target.value })} className={inputCls}>
                                   {DIAS_SEMANA.map((d) => <option key={d}>{d}</option>)}
-                                </select>
+                                </Selecao>
                               </Campo>
                             )}
                             <Campo rotulo="Entrada">

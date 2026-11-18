@@ -22,6 +22,7 @@ import { mensagemErro, normalizar } from '@/lib/formato';
 import { criarUsuario, redefinirSenha, type NovoUsuario } from '@/lib/adminUsuarios';
 import { Aviso, Botao, Campo, Selo, TabelaWrap, campoCls, inputCls, tdCls, thCls } from '@/components/ui';
 import { Paginacao, usePaginacao } from '@/components/Paginacao';
+import { Selecao } from '@/components/CampoBusca';
 
 type Usuario = {
   id: string;
@@ -339,18 +340,18 @@ export default function AdminUsuarios({ meuId }: { meuId: string }) {
               />
             </Campo>
             <Campo rotulo="Perfil de acesso">
-              <select
+              <Selecao
                 value={novo.perfil}
                 onChange={(e) => setNovo({ ...novo, perfil: e.target.value as NovoUsuario['perfil'] })}
                 className={inputCls}
               >
                 <option value="unidade">ADM Unidade</option>
                 <option value="central">ADM Central (Sede)</option>
-              </select>
+              </Selecao>
             </Campo>
             {novo.perfil === 'unidade' && (
               <Campo rotulo="Unidade vinculada *">
-                <select
+                <Selecao
                   value={novo.unidade_id ?? ''}
                   onChange={(e) => setNovo({ ...novo, unidade_id: e.target.value || null })}
                   className={inputCls}
@@ -361,7 +362,7 @@ export default function AdminUsuarios({ meuId }: { meuId: string }) {
                       {u.nome}
                     </option>
                   ))}
-                </select>
+                </Selecao>
               </Campo>
             )}
           </div>
@@ -458,19 +459,19 @@ export default function AdminUsuarios({ meuId }: { meuId: string }) {
                           </div>
                           <div>
                             <label className="text-[10px] font-bold text-slate-gray uppercase">Acesso</label>
-                            <select
+                            <Selecao
                               value={ed.perfil}
                               onChange={(e) => setEditando({ ...ed, perfil: e.target.value as Usuario['perfil'] })}
                               className={campoCls}
                             >
                               <option value="unidade">ADM Unidade</option>
                               <option value="central">ADM Central</option>
-                            </select>
+                            </Selecao>
                           </div>
                           {ed.perfil === 'unidade' && (
                             <div>
                               <label className="text-[10px] font-bold text-slate-gray uppercase">Unidade</label>
-                              <select
+                              <Selecao
                                 value={ed.unidade_id ?? ''}
                                 onChange={(e) => setEditando({ ...ed, unidade_id: e.target.value || null })}
                                 className={campoCls}
@@ -481,7 +482,7 @@ export default function AdminUsuarios({ meuId }: { meuId: string }) {
                                     {x.nome}
                                   </option>
                                 ))}
-                              </select>
+                              </Selecao>
                             </div>
                           )}
                         </div>
@@ -618,7 +619,7 @@ export default function AdminUsuarios({ meuId }: { meuId: string }) {
                       <td className={tdCls}>{u.email}</td>
                       <td className={tdCls}>
                         {ed ? (
-                          <select
+                          <Selecao
                             value={ed.perfil}
                             onChange={(e) => setEditando({ ...ed, perfil: e.target.value as Usuario['perfil'] })}
                             aria-label="Acesso"
@@ -626,7 +627,7 @@ export default function AdminUsuarios({ meuId }: { meuId: string }) {
                           >
                             <option value="unidade">ADM Unidade</option>
                             <option value="central">ADM Central</option>
-                          </select>
+                          </Selecao>
                         ) : u.perfil === 'central' ? (
                           'ADM Central'
                         ) : (
@@ -636,7 +637,7 @@ export default function AdminUsuarios({ meuId }: { meuId: string }) {
                       <td className={tdCls}>
                         {ed ? (
                           ed.perfil === 'unidade' && (
-                            <select
+                            <Selecao
                               value={ed.unidade_id ?? ''}
                               onChange={(e) => setEditando({ ...ed, unidade_id: e.target.value || null })}
                               aria-label="Unidade"
@@ -648,7 +649,7 @@ export default function AdminUsuarios({ meuId }: { meuId: string }) {
                                   {x.nome}
                                 </option>
                               ))}
-                            </select>
+                            </Selecao>
                           )
                         ) : (
                           u.unidade?.nome ?? (u.perfil === 'central' ? 'Sede' : '—')

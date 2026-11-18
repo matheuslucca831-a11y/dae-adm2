@@ -4,6 +4,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { DIAS_SEMANA, FREQUENCIAS } from '@/lib/constantes';
 import { Botao, campoCls } from '@/components/ui';
 import AtalhosHorario, { SeletorAtalho, juntarLinhas } from '@/components/AtalhosHorario';
+import { Selecao } from '@/components/CampoBusca';
 
 export type HorarioSugestao = { frequencia: string; dia_semana: string; data_referencia: string; entrada: string; saida: string };
 export const novoHorario = (): HorarioSugestao => ({ frequencia: 'Semanal', dia_semana: 'Segunda-feira', data_referencia: '', entrada: '', saida: '' });
@@ -16,15 +17,15 @@ export default function EditorHorarios({ valor, onChange }: { valor: HorarioSuge
       <AtalhosHorario onAplicar={(novas) => onChange(juntarLinhas(valor, novas, (l) => ({ ...novoHorario(), ...l })))} />
       {valor.map((h, i) => (
         <div key={i} className="flex flex-wrap items-center gap-2 rounded-md bg-papel/60 p-2">
-          <select value={h.frequencia} onChange={(e) => muda(i, { frequencia: e.target.value })} aria-label="Frequência" className={campoCls}>
+          <Selecao value={h.frequencia} onChange={(e) => muda(i, { frequencia: e.target.value })} aria-label="Frequência" className={campoCls}>
             {FREQUENCIAS.map((f) => <option key={f}>{f}</option>)}
-          </select>
+          </Selecao>
           {h.frequencia === 'Datas específicas' ? (
             <input type="date" value={h.data_referencia} onChange={(e) => muda(i, { data_referencia: e.target.value })} aria-label="Data" className={campoCls} />
           ) : (
-            <select value={h.dia_semana} onChange={(e) => muda(i, { dia_semana: e.target.value })} aria-label="Dia da semana" className={campoCls}>
+            <Selecao value={h.dia_semana} onChange={(e) => muda(i, { dia_semana: e.target.value })} aria-label="Dia da semana" className={campoCls}>
               {DIAS_SEMANA.map((d) => <option key={d}>{d}</option>)}
-            </select>
+            </Selecao>
           )}
           <span className="text-sm text-tinta-suave">das</span>
           <input type="time" value={h.entrada} onChange={(e) => muda(i, { entrada: e.target.value })} aria-label="Entrada" className={campoCls} />

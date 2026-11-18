@@ -7,6 +7,7 @@ import { CAMPOS_LANCAMENTO, CATEGORIAS, detalhe, textoAndamento, decisaoDe, type
 import { Aviso, campoCls } from '@/components/ui';
 import { buscarTudo } from '@/lib/buscarTudo';
 import { FiltroPeriodo, FolhaRelatorio, Grupo, mesAtual, tabRel, tdRel, textoPeriodo, thRel } from './FolhaRelatorio';
+import { Selecao } from '@/components/CampoBusca';
 
 const ANDAMENTOS = ['Aguardando autorização', 'Autorizado / Aguardando envio', 'Enviado ao RH', 'Devolvido', 'Não autorizado'];
 
@@ -55,18 +56,18 @@ export default function RelPedidos({ unidades }: { unidades: { id: string; nome:
     <>
       <div className="flex flex-wrap items-center gap-3 print:hidden">
         <FiltroPeriodo valor={periodo} onChange={(p) => { recarregar(); setPeriodo(p); }} />
-        <select value={fCat} onChange={(e) => { recarregar(); setFCat(e.target.value as Categoria | ''); }} aria-label="Categoria" className={campoCls}>
+        <Selecao value={fCat} onChange={(e) => { recarregar(); setFCat(e.target.value as Categoria | ''); }} aria-label="Categoria" className={campoCls}>
           <option value="">Todas as categorias</option>
           {(Object.keys(CATEGORIAS) as Categoria[]).map((c) => <option key={c} value={c}>{CATEGORIAS[c].titulo}</option>)}
-        </select>
-        <select value={fUnidade} onChange={(e) => { recarregar(); setFUnidade(e.target.value); }} aria-label="Unidade" className={campoCls}>
+        </Selecao>
+        <Selecao value={fUnidade} onChange={(e) => { recarregar(); setFUnidade(e.target.value); }} aria-label="Unidade" className={campoCls}>
           <option value="">Todas as unidades</option>
           {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-        </select>
-        <select value={fAndamento} onChange={(e) => { recarregar(); setFAndamento(e.target.value); }} aria-label="Andamento" className={campoCls}>
+        </Selecao>
+        <Selecao value={fAndamento} onChange={(e) => { recarregar(); setFAndamento(e.target.value); }} aria-label="Andamento" className={campoCls}>
           <option value="">Qualquer andamento</option>
           {ANDAMENTOS.map((a) => <option key={a} value={a}>{textoAndamento({ situacao_rh: a, destino_rh: null })}</option>)}
-        </select>
+        </Selecao>
       </div>
       {erro && <div className="mt-3"><Aviso>{erro}</Aviso></div>}
 

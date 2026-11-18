@@ -5,6 +5,7 @@ import { Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { DIAS_SEMANA } from '@/lib/constantes';
 import { Botao, campoCls } from '@/components/ui';
+import { Selecao } from '@/components/CampoBusca';
 
 export type Atalho = { id?: string; entrada: string; saida: string };
 export type LinhaRapida = { dia_semana: string; entrada: string; saida: string };
@@ -137,13 +138,13 @@ export function juntarLinhas<T extends { frequencia: string; dia_semana: string 
 export function SeletorAtalho({ onEscolher, className = campoCls }: { onEscolher: (a: Atalho) => void; className?: string }) {
   const atalhos = useAtalhos();
   return (
-    <select value="" aria-label="Horário comum" className={className}
+    <Selecao value="" aria-label="Horário comum" className={className}
       onChange={(e) => {
         const a = atalhos[Number(e.target.value)];
         if (a) onEscolher(a);
       }}>
       <option value="">Horário comum…</option>
       {atalhos.map((a, i) => <option key={`${a.entrada}-${a.saida}`} value={i}>{rotuloAtalho(a)}</option>)}
-    </select>
+    </Selecao>
   );
 }

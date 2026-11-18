@@ -9,7 +9,7 @@ import {
   type Categoria, type Lancamento,
 } from '@/lib/lancamentos';
 import type { Perfil } from '@/lib/types';
-import CampoBusca from '@/components/CampoBusca';
+import CampoBusca, { Selecao } from '@/components/CampoBusca';
 import { Aviso, Botao, Campo, inputCls } from '@/components/ui';
 
 type Opcao = {
@@ -334,9 +334,9 @@ export default function FormLancamento({
           )}
 
           <Campo rotulo="Tipo *">
-            <select value={f.tipo} onChange={(e) => set('tipo', e.target.value)} className={inputCls}>
+            <Selecao value={f.tipo} onChange={(e) => set('tipo', e.target.value)} className={inputCls}>
               {cfg.tipos.map((t) => <option key={t}>{t}</option>)}
-            </select>
+            </Selecao>
           </Campo>
           <Campo rotulo="Recebido em">
             <input type="date" value={f.data_recebimento} onChange={(e) => set('data_recebimento', e.target.value)} className={inputCls} />

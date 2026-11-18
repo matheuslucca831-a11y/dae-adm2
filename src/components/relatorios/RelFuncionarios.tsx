@@ -6,6 +6,7 @@ import { dataBR, mensagemErro } from '@/lib/formato';
 import { Aviso, campoCls } from '@/components/ui';
 import { buscarTudo } from '@/lib/buscarTudo';
 import { FolhaRelatorio, Grupo, tabRel, tdRel, thRel } from './FolhaRelatorio';
+import { Selecao } from '@/components/CampoBusca';
 
 type Horario = { dia_semana: string | null; frequencia: string; entrada: string | null; saida: string | null; data_referencia: string | null };
 type Func = {
@@ -80,19 +81,19 @@ export default function RelFuncionarios({ unidades }: { unidades: { id: string; 
   return (
     <>
       <div className="flex flex-wrap gap-2 print:hidden">
-        <select value={fUnidade} onChange={(e) => setFUnidade(e.target.value)} aria-label="Unidade" className={campoCls}>
+        <Selecao value={fUnidade} onChange={(e) => setFUnidade(e.target.value)} aria-label="Unidade" className={campoCls}>
           <option value="">Todas as unidades</option>
           {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-        </select>
-        <select value={fVinculo} onChange={(e) => setFVinculo(e.target.value)} aria-label="Vínculo" className={campoCls}>
+        </Selecao>
+        <Selecao value={fVinculo} onChange={(e) => setFVinculo(e.target.value)} aria-label="Vínculo" className={campoCls}>
           <option value="">Todos os vínculos</option>
           {vinculos.map((v) => <option key={v}>{v}</option>)}
-        </select>
-        <select value={fSituacao} onChange={(e) => setFSituacao(e.target.value)} aria-label="Situação" className={campoCls}>
+        </Selecao>
+        <Selecao value={fSituacao} onChange={(e) => setFSituacao(e.target.value)} aria-label="Situação" className={campoCls}>
           <option value="Ativo">Ativos</option>
           <option value="Inativo">Inativos</option>
           <option value="">Todos</option>
-        </select>
+        </Selecao>
       </div>
       {erro && <div className="mt-3"><Aviso>{erro}</Aviso></div>}
 

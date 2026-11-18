@@ -8,6 +8,7 @@ import { competenciaAtual, dataBR, dataHoraBR, hojeISO, mensagemErro, nomeCompet
 import { MOTIVOS_ENCERRAMENTO, type SituacaoRelacao } from '@/lib/constantes';
 import { Paginacao, foraDaPagina, usePaginacao } from '@/components/Paginacao';
 import { Aviso, Botao, Campo, Selo, SeletorMes, TabelaWrap, inputCls, tdCls, thCls } from '@/components/ui';
+import { Selecao } from '@/components/CampoBusca';
 
 type Unidade = { id: string; nome: string; sigla: string | null };
 type RelacaoResumo = {
@@ -325,9 +326,9 @@ function DetalheRelacao({
                             <input type="date" value={ajuste.data} min={l.data_inicio} onChange={(e) => setAjuste({ ...ajuste, data: e.target.value })} className={inputCls} />
                           </Campo>
                           <Campo rotulo="Motivo">
-                            <select value={ajuste.motivo} onChange={(e) => setAjuste({ ...ajuste, motivo: e.target.value })} className={inputCls}>
+                            <Selecao value={ajuste.motivo} onChange={(e) => setAjuste({ ...ajuste, motivo: e.target.value })} className={inputCls}>
                               {MOTIVOS_ENCERRAMENTO.map((m) => <option key={m}>{m}</option>)}
-                            </select>
+                            </Selecao>
                           </Campo>
                           <Campo rotulo="Justificativa">
                             <input value={ajuste.justificativa} onChange={(e) => setAjuste({ ...ajuste, justificativa: e.target.value })} className={inputCls} />

@@ -4,6 +4,7 @@ import { useId, type ReactNode } from 'react';
 import { formatarCNS, formatarCPF, mascaraCNS, mascaraCPF, soDigitos } from '@/lib/formato';
 import { Campo, inputCls } from '@/components/ui';
 import CampoCargo, { useCargosInfo } from '@/components/CampoCargo';
+import { Selecao } from '@/components/CampoBusca';
 
 /** Campos da ficha "Cadastro de Profissionais em Estabelecimentos de Saúde" (CNES) */
 export type FichaDados = {
@@ -173,10 +174,10 @@ export default function FichaProfissional({ valor: f, onChange, vinculos, comple
           </div>
 
           <Campo rotulo={ob('Vínculo')} className="sm:col-span-2" dica="Preenchido pela forma de contratação; pode trocar.">
-            <select value={f.vinculo} onChange={(e) => onChange({ vinculo: e.target.value })} className={inputCls}>
+            <Selecao value={f.vinculo} onChange={(e) => onChange({ vinculo: e.target.value })} className={inputCls}>
               <option value="">Selecione</option>
               {vinculos.map((v) => <option key={v}>{v}</option>)}
-            </select>
+            </Selecao>
           </Campo>
           <Campo rotulo="Carga horária semanal" className="sm:col-span-2">
             <input type="number" min={0} max={80} value={f.carga_horaria_semanal} placeholder="ex.: 40"
@@ -196,10 +197,10 @@ export default function FichaProfissional({ valor: f, onChange, vinculos, comple
             <datalist id={listaConselhos}>{CONSELHOS.map((c) => <option key={c} value={c} />)}</datalist>
           </Campo>
           <Campo rotulo="UF" className="sm:col-span-1">
-            <select value={f.conselho_uf} onChange={(e) => onChange({ conselho_uf: e.target.value })} className={inputCls}>
+            <Selecao value={f.conselho_uf} onChange={(e) => onChange({ conselho_uf: e.target.value })} className={inputCls}>
               <option value="">–</option>
               {UFS.map((u) => <option key={u}>{u}</option>)}
-            </select>
+            </Selecao>
           </Campo>
         </div>
       </Secao>
