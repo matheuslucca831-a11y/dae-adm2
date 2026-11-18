@@ -9,6 +9,7 @@ import {
   type Categoria, type Lancamento,
 } from '@/lib/lancamentos';
 import type { Perfil } from '@/lib/types';
+import CampoBusca from '@/components/CampoBusca';
 import { Aviso, Botao, Campo, inputCls } from '@/components/ui';
 
 type Opcao = {
@@ -327,10 +328,8 @@ export default function FormLancamento({
 
           {central && (
             <Campo rotulo="Unidade" className="sm:col-span-2">
-              <select value={f.unidade_id} onChange={(e) => set('unidade_id', e.target.value)} className={inputCls}>
-                <option value="">Sem unidade</option>
-                {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-              </select>
+              <CampoBusca valor={f.unidade_id} onEscolher={(v) => set('unidade_id', v)} textoVazio="Sem unidade"
+                placeholder="Digite o nome da unidade" opcoes={unidades.map((u) => ({ valor: u.id, rotulo: u.nome }))} />
             </Campo>
           )}
 
