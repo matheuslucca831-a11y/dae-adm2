@@ -270,17 +270,6 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => setFSituacao('')}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              fSituacao === ''
-                ? 'bg-electric-cobalt text-white shadow-xs'
-                : 'bg-white text-slate-gray border border-linha hover:text-ink-charcoal'
-            }`}
-          >
-            Todos os Funcionários <span className="opacity-80">({linhas.length})</span>
-          </button>
-          <button
-            type="button"
             onClick={() => setFSituacao('Ativo')}
             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
               fSituacao === 'Ativo'
@@ -300,6 +289,17 @@ function Cadastro({ atualizar = 0 }: { atualizar?: number }) {
             }`}
           >
             Inativos <span className="opacity-80">({totalInativos})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFSituacao('')}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              fSituacao === ''
+                ? 'bg-electric-cobalt text-white shadow-xs'
+                : 'bg-white text-slate-gray border border-linha hover:text-ink-charcoal'
+            }`}
+          >
+            Todos os Funcionários <span className="opacity-80">({linhas.length})</span>
           </button>
         </div>
 

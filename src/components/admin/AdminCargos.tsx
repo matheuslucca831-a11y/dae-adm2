@@ -66,7 +66,7 @@ export default function AdminCargos() {
     <>
       <p className="text-sm text-tinta-suave">
         Esta lista aparece no campo Cargo do cadastro e na sugestão das unidades. Em Editar dá para renomear e informar o CBO (ele preenche sozinho no cadastro). Renomear um cargo atualiza os funcionários que estão com ele.
-        Desativar tira o cargo da lista sem mexer em quem já o tem.
+        Desativar tira o cargo da lista sem mexer em quem já o tem. Um cargo desativado que ninguém usa pode ser excluído de vez (fica registrado no histórico).
       </p>
       <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-linha bg-white p-3">
         <input value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="Nome do novo cargo" aria-label="Novo cargo" className={`${campoCls} min-w-64 flex-1`} />
@@ -135,6 +135,13 @@ export default function AdminCargos() {
                           onClick={() => executar(supabase.from('cargos').update({ ativo: !c.ativo }).eq('nome', c.nome))}>
                           {c.ativo ? 'Desativar' : 'Reativar'}
                         </Botao>
+                        {!c.ativo && (
+                          <Botao variante="discreto" className="px-2.5 py-1.5 text-xs text-erro hover:text-erro"
+                            onClick={() => window.confirm(`Excluir de vez o cargo "${c.nome}" da lista? Fica registrado no histórico.`)
+                              && executar(supabase.from('cargos').delete().eq('nome', c.nome))}>
+                            Excluir
+                          </Botao>
+                        )}
                       </>
                     )}
                   </td>

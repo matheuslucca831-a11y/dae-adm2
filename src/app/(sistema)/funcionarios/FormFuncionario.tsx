@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { DIAS_SEMANA, FREQUENCIAS } from '@/lib/constantes';
-import { mensagemErro } from '@/lib/formato';
+import { mensagemErro, normalizar } from '@/lib/formato';
 import { registrarAcesso } from '@/lib/acessos';
 import { Aviso, Botao, Campo, inputCls } from '@/components/ui';
 import FichaProfissional, {
@@ -13,7 +13,7 @@ import FichaProfissional, {
 import AtalhosHorario, { SeletorAtalho, juntarLinhas } from '@/components/AtalhosHorario';
 import { DESTINOS_1DOC } from '@/lib/lancamentos';
 import { todosConflitos, type LotacaoBase } from '@/lib/escalas';
-import { Selecao } from '@/components/CampoBusca';
+import CampoBusca, { Selecao } from '@/components/CampoBusca';
 
 export type UnidadeOpcao = { id: string; nome: string; sigla: string | null; cnes?: string | null };
 
@@ -65,6 +65,8 @@ export default function FormFuncionario({
   const [carregando, setCarregando] = useState(editando);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // como está gravado no banco (a exclusão permanente só aparece para quem já está inativo)
+  const [inativoSalvo, setInativoSalvo] = useState(false);
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onFechar();
@@ -94,6 +96,7 @@ export default function FormFuncionario({
           forma_contratacao_2: data.forma_contratacao_2 ?? '', matricula_2: data.matricula_2 ?? '',
         });
         setExistentes((data.lotacoes as unknown as LotacaoExistente[]) ?? []);
+        setInativoSalvo(data.situacao === 'Inativo');
       }
       setCarregando(false);
     })();
@@ -299,6 +302,9 @@ export default function FormFuncionario({
                       </Campo>
                     )}
                   </div>
+                  {inativoSalvo && funcionarioId && (
+                    <ExcluirFuncionario funcionarioId={funcionarioId} nome={dados.nome} onExcluido={onSalvo} />
+                  )}
                 </fieldset>
               )}
 
@@ -425,6 +431,91 @@ export default function FormFuncionario({
           </div>
         </footer>
       </form>
+    </div>
+  );
+}
+
+/**
+ * Exclusão permanente de um cadastro inativo (ex.: duplicado). Se ele tiver pedidos,
+ * escolhe-se antes para qual cadastro eles vão. O cadastro apagado fica no histórico.
+ */
+function ExcluirFuncionario({ funcionarioId, nome, onExcluido }: { funcionarioId: string; nome: string; onExcluido: () => void }) {
+  const supabase = useMemo(() => createClient(), []);
+  const [aberto, setAberto] = useState(false);
+  const [pedidos, setPedidos] = useState<number | null>(null);
+  const [ativos, setAtivos] = useState<{ id: string; nome: string; matricula: string | null; cargo: string | null }[]>([]);
+  const [destino, setDestino] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!aberto) return;
+    let vivo = true;
+    Promise.all([
+      supabase.from('lancamentos').select('id', { count: 'exact', head: true }).eq('funcionario_id', funcionarioId),
+      supabase.from('funcionarios').select('id, nome, matricula, cargo').eq('situacao', 'Ativo').order('nome'),
+    ]).then(([p, f]) => {
+      if (!vivo) return;
+      setPedidos(p.count ?? 0);
+      const lista = (f.data as typeof ativos) ?? [];
+      setAtivos(lista);
+      // sugere o cadastro ativo de nome mais parecido (mesmo primeiro nome e mais um nome em comum)
+      const t = normalizar(nome).split(/\s+/).filter((x) => x.length > 2);
+      const nota = (n: string) => {
+        const u = normalizar(n).split(/\s+/);
+        return u[0] === t[0] ? t.filter((x) => u.includes(x)).length : 0;
+      };
+      const melhor = [...lista].sort((a, b) => nota(b.nome) - nota(a.nome))[0];
+      if (melhor && nota(melhor.nome) >= 2) setDestino(melhor.id);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [aberto, supabase, funcionarioId, nome]);
+
+  async function excluir() {
+    const para = ativos.find((a) => a.id === destino);
+    if (!window.confirm(`Excluir de vez o cadastro de ${nome}?` +
+      (pedidos ? `\n\nOs ${pedidos} pedido(s) vão para ${para?.nome}.` : '') +
+      '\n\nLotações e horários dele também saem. O cadastro fica guardado só no histórico.')) return;
+    setOcupado(true);
+    const { error } = await supabase.rpc('excluir_funcionario', { p_funcionario: funcionarioId, p_destino: destino || null });
+    setOcupado(false);
+    if (error) return setErro(mensagemErro(error));
+    onExcluido();
+  }
+
+  if (!aberto) {
+    return (
+      <div className="mt-3 border-t border-linha pt-3">
+        <button type="button" onClick={() => setAberto(true)} className="text-sm font-semibold text-erro hover:underline">
+          Excluir permanentemente…
+        </button>
+        <span className="ml-2 text-xs text-tinta-suave">para cadastro duplicado ou feito por engano</span>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 rounded-md border border-erro/40 bg-erro-claro p-3 text-sm">
+      <p className="font-semibold">Excluir permanentemente</p>
+      <p className="mt-1 text-tinta-suave">Apaga o cadastro de vez, com as lotações e horários. Fica registrado no histórico.</p>
+      {pedidos === null && <p className="mt-2 text-tinta-suave" role="status">Conferindo os pedidos…</p>}
+      {pedidos !== null && pedidos > 0 && (
+        <div className="mt-3">
+          <span className="mb-1 block text-xs font-semibold text-tinta-suave">
+            Este cadastro tem {pedidos} pedido(s)/avaliação(ões). Para qual funcionário eles vão? *
+          </span>
+          <CampoBusca valor={destino} onEscolher={setDestino} placeholder="Digite o nome do cadastro certo"
+            opcoes={ativos.map((a) => ({ valor: a.id, rotulo: a.nome, detalhe: [a.matricula && `Matr. ${a.matricula}`, a.cargo].filter(Boolean).join(' · ') }))} />
+        </div>
+      )}
+      {erro && <div className="mt-2"><Aviso>{erro}</Aviso></div>}
+      <div className="mt-3 flex gap-2">
+        <Botao variante="perigo" carregando={ocupado} disabled={pedidos === null || (pedidos > 0 && !destino)} onClick={excluir}>
+          <Trash2 className="size-4" aria-hidden /> Excluir de vez
+        </Botao>
+        <Botao variante="discreto" onClick={() => setAberto(false)}>Cancelar</Botao>
+      </div>
     </div>
   );
 }
