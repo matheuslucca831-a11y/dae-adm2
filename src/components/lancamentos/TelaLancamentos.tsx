@@ -105,6 +105,8 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
   const [ultimoDiretor, setUltimoDiretor] = useState('');
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [sel, setSel] = useState<Set<string>>(new Set());
+  // assinatura em lote (fila "Aguardando assinatura")
+  const [lote, setLote] = useState({ diretor_id: '', data: hojeISO() });
   const router = useRouter();
   const caminho = usePathname();
 
@@ -283,7 +285,11 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
 
   // ---------- Gerar aviso direto da fila "Prontos para o RH" ----------
   const filaEnvio = central && modo === 'enviar';
-  const selecionavel = (l: Lancamento) => filaEnvio && !!l.destino_rh && !primeiro(l.aviso_rh_itens)?.aviso;
+  const filaAssinatura = central && modo === 'assinatura';
+  const comCaixa = filaEnvio || filaAssinatura;
+  const selecionavel = (l: Lancamento) => filaEnvio
+    ? !!l.destino_rh && !primeiro(l.aviso_rh_itens)?.aviso
+    : filaAssinatura && l.diretora === 'Aguardando' && (l.categoria !== 'avaliacoes' || l.avaliacao_etapa === 'Na DAE');
   const livres = visiveis.filter(selecionavel);
   const todosMarcados = livres.length > 0 && livres.every((l) => sel.has(l.id));
   const marcar = (ids: string[], sim: boolean) => setSel((s) => {
@@ -291,6 +297,26 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
     ids.forEach((id) => (sim ? n.add(id) : n.delete(id)));
     return n;
   });
+
+  /** Assina de uma vez os marcados (cada um continua podendo ser assinado sozinho) */
+  async function assinarLote() {
+    const ids = livres.filter((l) => sel.has(l.id)).map((l) => l.id);
+    const diretor_id = lote.diretor_id || diretorPadrao();
+    if (!ids.length) return;
+    if (!diretor_id) return setErro('Escolha qual diretor(a) assinou.');
+    const nomeDir = diretores.find((d) => d.id === diretor_id)?.nome ?? '';
+    if (!window.confirm(`Registrar a assinatura de ${ids.length} ${ids.length === 1 ? 'pedido' : 'pedidos'} por ${nomeDir}` +
+      `${lote.data ? `, em ${dataBR(lote.data)}` : ''}?`)) return;
+    setOcupado('lote');
+    setUltimoDiretor(diretor_id);
+    const { data, error } = await supabase.from('lancamentos')
+      .update({ diretora: 'Autorizado', diretora_obs: null, diretor_id, data_assinatura: lote.data || null })
+      .in('id', ids).select('id');
+    setOcupado(null);
+    if (error) return setErro(mensagemErro(error));
+    setSel(new Set());
+    concluir(`${data?.length ?? ids.length} ${(data?.length ?? ids.length) === 1 ? 'pedido assinado' : 'pedidos assinados'}. Eles foram para "Prontos para o RH".`);
+  }
 
   async function gerarAviso(destino: string) {
     const ids = livres.filter((l) => sel.has(l.id) && l.destino_rh === destino).map((l) => l.id);
@@ -302,7 +328,7 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
     router.push(`/avisos-rh?aviso=${data}&voltar=${encodeURIComponent(caminho)}`);
   }
 
-  const colunas = (filaEnvio ? 1 : 0) + 4 + (central ? 1 : 0);
+  const colunas = (comCaixa ? 1 : 0) + 4 + (central ? 1 : 0);
   const ord = { ordem, onOrdenar: setOrdem };
 
   // ---------- Ação principal + menu de cada linha ----------
@@ -622,6 +648,35 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
           })}
         </div>
       )}
+      {filaAssinatura && !carregando && livres.length > 0 && (
+        <div className="mt-4 rounded-lg border border-acento/30 bg-acento-claro/40 px-4 py-3">
+          <p className="text-sm">
+            <strong>Assinatura em lote:</strong> marque os pedidos (ou todos, na caixa do cabeçalho da tabela) e registre de uma vez.
+            <span className="text-tinta-suave"> Também dá para assinar um por um pelo botão de cada linha.</span>
+          </p>
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            {diretores.length === 0 ? (
+              <span className="text-sm text-erro">Nenhum diretor cadastrado (Administração &gt; Diretores).</span>
+            ) : (
+              <div className="w-72 max-w-full">
+                <span className="mb-1 block text-xs font-semibold text-tinta-suave">Quem assinou *</span>
+                <Selecao value={lote.diretor_id || diretorPadrao()} onChange={(e) => setLote({ ...lote, diretor_id: e.target.value })}
+                  aria-label="Quem assinou" className={`${campoCls} w-full text-tinta`}>
+                  <option value="">Selecione</option>
+                  {diretores.map((d) => <option key={d.id} value={d.id}>{d.nome}{d.cargo ? ` (${d.cargo})` : ''}</option>)}
+                </Selecao>
+              </div>
+            )}
+            <label className="text-xs font-semibold text-tinta-suave">
+              Data da assinatura
+              <input type="date" value={lote.data} onChange={(e) => setLote({ ...lote, data: e.target.value })} className={`${campoCls} mt-1 block text-tinta`} />
+            </label>
+            <Botao disabled={!livres.some((l) => sel.has(l.id))} carregando={ocupado === 'lote'} onClick={assinarLote}>
+              <PenLine className="size-4" aria-hidden /> Assinar marcados ({livres.filter((l) => sel.has(l.id)).length})
+            </Botao>
+          </div>
+        </div>
+      )}
       <p className="mt-4 mb-2 text-sm text-tinta-suave" aria-live="polite">
         {carregando ? 'Carregando…' : `${visiveis.length} de ${lista.length} ${nome.muitos}`}
       </p>
@@ -631,7 +686,7 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
         <table className="w-full text-sm">
           <thead>
             <tr>
-              {filaEnvio && (
+              {comCaixa && (
                 <th className={`${thCls} w-10`}>
                   {livres.length > 0 && (
                     <input type="checkbox" checked={todosMarcados} aria-label="Marcar todos"
@@ -661,7 +716,7 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
               return (
                 <Fragment key={l.id}>
                   <tr className={`align-top hover:bg-papel/50 ${painel?.id === l.id ? 'bg-acento-claro/30' : ''}`}>
-                    {filaEnvio && (
+                    {comCaixa && (
                       <td className={tdCls}>
                         {selecionavel(l) && (
                           <input type="checkbox" checked={sel.has(l.id)} aria-label={`Marcar ${l.protocolo_dae}`}
