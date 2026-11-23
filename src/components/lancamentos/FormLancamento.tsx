@@ -31,6 +31,8 @@ export default function FormLancamento({
   const central = perfil.perfil === 'central';
   const tem = (c: string) => cfg.campos.includes(c as never);
   const l = lancamento;
+  /** Pedido já assinado ou enviado, aberto só para corrigir um dado (ex.: ano errado) */
+  const correcao = !!l && !['Aguardando', 'Devolvido'].includes(l.diretora) && !l.enviado_1doc;
 
   const [opcoes, setOpcoes] = useState<Opcao[]>([]);
   // Funcionário escolhido (no editar, vem do próprio pedido)
@@ -243,6 +245,12 @@ export default function FormLancamento({
           <div>
             <h2 id="titulo-lanc" className="text-lg font-bold">{l ? `Lançamento ${l.protocolo_dae}` : `Novo lançamento: ${cfg.titulo}`}</h2>
             {l?.diretora === 'Devolvido' && <p className="text-sm text-erro">Devolvido: {l.diretora_obs}. Ao salvar, volta para a assinatura da Diretoria.</p>}
+            {correcao && (
+              <p className="mt-1 text-sm text-tinta-suave">
+                Correção de dados de um pedido já {l?.situacao_rh === 'Autorizado / Aguardando envio' ? 'assinado' : 'enviado ao RH'}.
+                A assinatura e o envio continuam como estão; o Aviso já entregue ao RH não muda.
+              </p>
+            )}
           </div>
           <button type="button" onClick={onFechar} aria-label="Fechar" className="rounded p-1.5 text-tinta-suave hover:bg-papel">
             <X className="size-5" />

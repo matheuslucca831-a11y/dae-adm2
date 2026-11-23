@@ -388,6 +388,8 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
     const itens: ItemMenu[] = [];
     if (l.categoria === 'avaliacoes') itens.push({ rotulo: 'Ver o caminho', icone: History, onClick: () => setPainel({ id: l.id, tipo: 'caminho' }) });
     if (editavel) itens.push({ rotulo: 'Editar', icone: Pencil, onClick: () => setForm({ aberto: true, item: l }) });
+    // pedido já assinado/enviado: a Sede pode corrigir um dado lançado errado (ex.: ano das férias)
+    else if (central && l.diretora !== 'Não autorizado') itens.push({ rotulo: 'Corrigir dados', icone: Pencil, onClick: () => setForm({ aberto: true, item: l }) });
     if (CATEGORIAS[l.categoria].temUmDoc && primeiro(l.comunicados_1doc)) itens.push({ rotulo: 'Comunicação 1Doc', icone: FileText, onClick: () => setUmDoc(l) });
     if (aviso) itens.push({ rotulo: `Abrir Aviso ${aviso.numero}`, icone: FileText, onClick: () => router.push(`/avisos-rh?aviso=${aviso.id}&voltar=${encodeURIComponent(caminho)}`) });
     if (l.diretora !== 'Aguardando' && !enviado && !aviso) {
