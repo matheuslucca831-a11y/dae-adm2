@@ -96,7 +96,8 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
   const filtrosVazios = { busca: '', unidade: '', vinculo: '', tipo: '', cargo: '' };
   const [fil, setFil] = useState(filtrosVazios);
   const [maisFiltros, setMaisFiltros] = useState(false);
-  const [ordem, setOrdem] = useState<Ordem>({ chave: 'data_recebimento', dir: 1 });
+  // mais recentes primeiro: o último pedido recebido aparece no topo (clicar em "Recebido" inverte)
+  const [ordem, setOrdem] = useState<Ordem>({ chave: 'data_recebimento', dir: -1 });
 
   const [form, setForm] = useState<{ aberto: boolean; item: Lancamento | null }>({ aberto: false, item: null });
   const [umDoc, setUmDoc] = useState<Lancamento | null>(null);
@@ -181,7 +182,8 @@ export default function TelaLancamentos({ categorias, inicial, titulo, descricao
     return arr.sort((a, b) => {
       const va = a[ordem.chave] ?? '', vb = b[ordem.chave] ?? '';
       const r = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb), 'pt-BR');
-      return r * ordem.dir || a.protocolo_dae.localeCompare(b.protocolo_dae);
+      // mesmo dia: pela ordem de lançamento (protocolo), no mesmo sentido da coluna
+      return (r || a.protocolo_dae.localeCompare(b.protocolo_dae, 'pt-BR', { numeric: true })) * ordem.dir;
     });
   }, [lista, fil, ordem]);
   // salvar/assinar recarrega a lista mas mantém a página; trocar fila, filtro ou ordem volta para a 1
